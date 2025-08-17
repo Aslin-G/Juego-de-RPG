@@ -3,898 +3,816 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RPG Educativo – Laberinto Iluminado</title>
-<meta name="description" content="RPG educativo en un solo archivo: laberinto totalmente iluminado, murciélagos, encuentros 25% por paso, combate por preguntas, inventario y niveles." />
+<title>RPG Educativo: Llave, Puerta y Murciélagos</title>
 <style>
   :root{
-    /* Paleta clara (todo visible) */
-    --bg:#f7fbff;
-    --panel:#0e142e;
-    --panel2:#141b3a;
-    --text:#eaf1ff;
-    --accent:#7cc4ff;
-    --hp:#00c78a;
-    --hpBad:#ff6b7b;
-    --muted:rgba(255,255,255,.9);
-    /* Baldosas de piedra claras */
-    --stone1:#e7eef8;
-    --stone2:#dfe8f6;
-    --stone3:#f1f6ff;
-    --stoneCrack:#c6d3ea;
-    /* Paredes claras */
-    --wallFace:#d1dbef;
-    --wallTop:#eaf1ff;
-    --wallEdge:#b7c6e6;
-    --gold:#bfa052;
-    --iron:#7e869b;
+    --hud-h: 72px;
+    --accent: #e1b12c;
+    --danger: #e84118;
+    --ok: #2ecc71;
+    --ink: #111;
+    --ink-2: #333;
   }
-  *{box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  html,body{height:100%;margin:0;background:#ffffff;color:var(--text)}
-  .wrap{max-width:1100px;margin:0 auto;padding:14px}
-  .hud{
-    display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-    background:var(--panel2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 12px;margin-bottom:10px;
-    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  *{box-sizing:border-box}
+  html, body {
+    margin:0; padding:0; background:#ffffff; color:var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    height:100%;
   }
-  .left,.right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 10px;font-weight:700}
-  .bar{width:180px;height:12px;background:#0a0f27;border-radius:999px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
-  .bar>span{display:block;height:100%;background:linear-gradient(90deg,#3dffb2,var(--hp))}
-  .gridnote{color:#274; font-size:12px; margin-top:6px}
-  #cv{width:100%;height:auto;border-radius:16px;border:1px solid #dde6f2;background:var(--bg)}
-  .log{margin-top:8px;font-size:13px;color:#0b1836;background:#eaf3ff;border:1px solid #d9e6ff;border-radius:10px;padding:8px}
-  /* Overlays */
-  .overlay{position:fixed;inset:0;background:rgba(3,8,24,.2);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;padding:14px}
-  .card{width:min(900px,95vw);background:var(--panel);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-  .row{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-  .choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-  .btn{cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:var(--text);border-radius:12px;padding:10px 12px;font-weight:700}
-  .btn:hover{background:rgba(255,255,255,.12)}
-  .btn.primary{background:var(--accent);color:#07122a;border:none}
-  .muted{opacity:.9}
-  /* Inventario */
-  .inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
-  .slot{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px}
-  .slot h4{margin:0 0 4px 0}
-  /* Accesibilidad */
-  .sr{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+  #hud{
+    position:fixed; top:0; left:0; right:0; height:var(--hud-h); background:rgba(255,255,255,0.95);
+    display:flex; align-items:center; gap:18px; padding:10px 16px; border-bottom: 1px solid #eee; z-index:10;
+    backdrop-filter: blur(4px);
+  }
+  #hud .hearts{display:flex; align-items:center; gap:6px; font-size:14px}
+  .heart{width:20px; height:20px; border-radius:4px; background:var(--danger); box-shadow: inset 0 -2px 0 rgba(0,0,0,.08);}
+  .heart.empty{background:#fff; border:2px solid var(--danger)}
+  #timer{font-weight:700; font-variant-numeric: tabular-nums; letter-spacing:1px; padding:6px 10px; background:#fff;
+    border:1px solid #eee; border-radius:8px; box-shadow:0 1px 0 #eee;}
+  #torchBox{display:flex; align-items:center; gap:10px; width:min(420px, 40vw);}
+  #torchBar{position:relative; flex:1; height:16px; border-radius:999px; background:#fafafa; border:1px solid #eee; overflow:hidden;}
+  #torchFill{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg, #ffd56b, #f39c12);}
+  #torchPct{width:54px; text-align:right; font-variant-numeric: tabular-nums; color:var(--ink-2);}
+  #hintTorch{font-size:12px; color:#666}
+  #audioCtl{margin-left:auto; display:flex; align-items:center; gap:8px; color:#555; font-size:12px}
+  #audioCtl input[type="range"]{width:110px}
+
+  #canvasWrap{ position:fixed; left:0; right:0; top:var(--hud-h); bottom:0; overflow:hidden; background:#fff;}
+  canvas{ image-rendering: pixelated; background: #f6f8fb; outline:none; display:block; margin:0 auto; }
+
+  /* Modal Preguntas */
+  #quizModal{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:20;
+  }
+  #quizCard{
+    width:min(760px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    padding:18px; border:1px solid #eee;
+  }
+  #quizHdr{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
+  #quizHdr h3{margin:0; font-size:18px}
+  #qProgress{display:flex; gap:6px}
+  .seg{width:18px; height:8px; border-radius:99px; background:#eee}
+  .seg.on{background:var(--ok)}
+  .seg.bad{background:var(--danger)}
+  #qText{font-size:16px; line-height:1.35; margin:8px 0 14px; color:#222}
+  .opts{display:grid; grid-template-columns: 1fr; gap:10px}
+  .optBtn{
+    padding:12px 14px; border:1px solid #ddd; border-radius:12px; background:#fafafa; display:flex; gap:10px; align-items:center;
+    cursor:pointer; font-size:15px; transition: transform .05s ease;
+  }
+  .optBtn:hover{ transform: translateY(-1px); background:#fff; }
+  .optKey{ width:28px; height:28px; border-radius:8px; background:#fff; border:1px solid #ddd; display:grid; place-items:center; font-weight:700;}
+  .optTxt{flex:1}
+  #quizFooter{display:flex; justify-content:space-between; align-items:center; margin-top:10px; color:#666; font-size:12px}
+
+  /* Panel Victoria */
+  #victory{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:25;
+  }
+  #victoryCard{
+    width:min(740px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    padding:18px; border:1px solid #eee;
+  }
+  table{ border-collapse: collapse; width:100%; font-size:14px; }
+  th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; }
+  th{ background:#fafafa }
+  .btn{ padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:600; }
+  .btn.primary{ background: var(--accent); border-color:#ca9e28; color:#111 }
+  #statusBubble{ font-size:12px; color:#666; }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="hud" role="group" aria-label="Indicadores del juego">
-      <div class="left">
-        <span class="pill">RPG Educativo – Laberinto Iluminado</span>
-        <span class="pill">Nivel <b id="uiLevel">1</b> · XP <b id="uiXP">0</b>/<b id="uiXPMax">100</b></span>
-        <div class="bar" aria-label="Salud"><span id="uiHP" style="width:100%"></span></div>
-        <span class="pill">DEF <b id="uiDEF">0</b></span>
-        <span class="pill">CREAT <b id="uiCR">0</b></span>
-        <span class="pill">Puntos <b id="uiScore">0</b></span>
-        <span class="pill">Llaves <b id="uiKeys">0</b>/3</span>
-      </div>
-      <div class="right">
-        <span class="pill">Mover: <b>WASD/Flechas</b></span>
-        <span class="pill">Interactuar: <b>E</b></span>
-        <span class="pill">Atacar: <b>Espacio</b></span>
-        <span class="pill">Inventario: <b>I</b></span>
-        <span class="pill">Respuesta: <b>1–4</b></span>
-        <button class="btn" id="btFlash" aria-pressed="false">✨ Resplandor (F)</button>
-        <button class="btn" id="btMute" aria-pressed="false">🔈 Sonido</button>
-      </div>
+  <div id="hud" aria-label="Barra superior HUD">
+    <div class="hearts" id="hearts"></div>
+    <div id="timer" aria-live="polite">⏳ 07:00</div>
+    <div id="torchBox" title="Antorcha (F): 5 s seguro, 60 s recarga">
+      <span>🔥</span>
+      <div id="torchBar" aria-label="Recarga antorcha"><div id="torchFill"></div></div>
+      <div id="torchPct">0%</div>
+      <div id="hintTorch">&nbsp;[F]</div>
     </div>
-
-    <canvas id="cv" width="960" height="540" aria-label="Juego RPG educativo en canvas" role="application"></canvas>
-    <div class="gridnote">
-      Escenario <b>totalmente iluminado</b> con ambientación de <b>laberinto</b> y <b>murciélagos volando</b>.
-      Probabilidad de encuentro al avanzar: <b>25%</b> por baldosa. El <b>Resplandor (F)</b> ahuyenta enemigos y bloquea encuentros por <b>3 s</b>.
+    <div id="statusBubble"></div>
+    <div id="audioCtl">
+      <label><input type="checkbox" id="mute"> Silencio</label>
+      <label>Volumen <input type="range" id="volume" min="0" max="1" step="0.01" value="0.15"></label>
     </div>
-    <div class="log" id="log">Consejo: responde bien para subir de nivel y desbloquear armaduras. Todo el progreso se guarda localmente.</div>
   </div>
 
-  <!-- Overlay Preguntas/Combate -->
-  <div class="overlay" id="olQuiz" aria-modal="true" role="dialog" aria-labelledby="qTitle">
-    <div class="card">
-      <div class="row">
-        <div style="flex:1">
-          <div class="muted">Enemigo</div>
-          <div class="bar" style="--hp: var(--hpBad)"><span id="eBar" style="width:100%;background:linear-gradient(90deg,#ffa1b1,var(--hpBad))"></span></div>
-        </div>
-        <div style="flex:1">
-          <div class="muted" style="text-align:right">Jugador</div>
-          <div class="bar"><span id="pBar" style="width:100%"></span></div>
-        </div>
+  <div id="canvasWrap">
+    <canvas id="game" width="1024" height="640" tabindex="0"></canvas>
+  </div>
+
+  <!-- Modal Preguntas -->
+  <div id="quizModal" role="dialog" aria-modal="true">
+    <div id="quizCard">
+      <div id="quizHdr">
+        <h3>Reto: 7 preguntas</h3>
+        <div id="qProgress" aria-label="Progreso preguntas"></div>
       </div>
-      <h2 id="qTitle" style="margin:8px 0 0 0">Pregunta…</h2>
-      <div class="choices" id="qChoices" role="group" aria-label="Opciones de respuesta"></div>
-      <div id="qRes" style="margin-top:6px;font-weight:800"></div>
-      <div class="row" style="margin-top:8px">
-        <span class="muted">Usa clic o teclas 1–4. <span id="qCounter"></span></span>
-        <button class="btn primary" id="qNext" style="display:none">Continuar</button>
+      <div id="qMeta" style="font-size:12px; color:#666;"></div>
+      <div id="qText"></div>
+      <div class="opts">
+        <button class="optBtn" data-idx="0"><div class="optKey">1</div><div class="optTxt"></div></button>
+        <button class="optBtn" data-idx="1"><div class="optKey">2</div><div class="optTxt"></div></button>
+        <button class="optBtn" data-idx="2"><div class="optKey">3</div><div class="optTxt"></div></button>
+        <button class="optBtn" data-idx="3"><div class="optKey">4</div><div class="optTxt"></div></button>
+      </div>
+      <div id="quizFooter">
+        <div>Usa 1–4 o clic para responder. <strong>Incorrecta = −1 ❤️</strong></div>
+        <div id="quizCount"></div>
       </div>
     </div>
   </div>
 
-  <!-- Overlay Inventario -->
-  <div class="overlay" id="olInv" aria-modal="true" role="dialog" aria-labelledby="invTitle">
-    <div class="card">
-      <div class="row"><h3 id="invTitle" style="margin:0">Inventario & Equipo</h3><button class="btn" id="btCloseInv">Cerrar (Esc)</button></div>
-      <div class="inv-grid" id="invGrid"></div>
-      <div class="row" style="margin-top:8px">
-        <div class="pill">Equipado: <b id="eqName">Sin armadura</b></div>
-        <div class="pill">Bonos → HP:<b id="eqHP">0</b> DEF:<b id="eqDEF">0</b> CREAT:<b id="eqCR">0</b></div>
+  <!-- Panel Victoria / Resultados -->
+  <div id="victory">
+    <div id="victoryCard">
+      <h2 style="margin:6px 0 12px;">¡Saliste de la mazmorra! 🎉</h2>
+      <div id="victStats"></div>
+      <h3>Desglose por categoría</h3>
+      <table id="catTable">
+        <thead><tr><th>Categoría</th><th>Total</th><th>Correctas</th><th>Incorrectas</th><th>Acierto</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:14px; display:flex; gap:8px;">
+        <button class="btn primary" id="btnReiniciar">Reiniciar</button>
       </div>
     </div>
   </div>
 
 <script>
-/* =========================================================
-   RPG EDUCATIVO – Laberinto totalmente iluminado
-   - Un solo archivo (HTML+CSS+JS) sin dependencias ni red
-   - Laberinto con colisiones, murciélagos volando
-   - Encuentros al avanzar 25% por baldosa; Resplandor (F) bloquea 3 s
-   - Combate por preguntas, inventario/equipo, XP/Nivel
-   - Doble buffer + rAF, sin flicker
-   ========================================================= */
-(() => {
-  // ---------- Config ----------
-  const TILE = 32, COLS = 30, ROWS = 17;       // 960×544 aprox. (usamos 540)
-  const QUIZ_ROUNDS = 4;                        // Preguntas por duelo
-  const FRIEND_BONUS_XP = 1.25;
-  const SOUND_GAIN = 0.05;
+/* =========================
+   Constantes / Utilidades
+========================= */
+const TILE = 32;
+const ROOM_COLS = 6, ROOM_ROWS = 4;
+const ROOM_W = 9, ROOM_H = 7; // interior caminable por sala
+const WALL = 1, FLOOR = 0, DOOR = 2, EXIT = 3, KEY = 4;
+const MAX_HEARTS = 7;
+const TOTAL_TIME = 7*60;
+const TORCH_CD = 60, TORCH_SAFE = 5;
+const BAT_STEP_MIN = 0.20, BAT_STEP_MAX = 0.30;
+const BATS_PER_ROOM = 3; // << puedes cambiarlo
+const BAT_WING_PERIOD = 350; // ms
+const STATE = { PLAYING:'playing', ASKING:'asking', VICTORY:'victory', DEFEAT_T:'defeat-time', DEFEAT_HP:'defeat-hp' };
 
-  // Resplandor (bloom + bloqueo de encuentros)
-  const FLASH_DURATION = 0.55;   // s de bloom visible
-  const FLASH_COOLDOWN = 8.0;    // s recarga botón F
-  const REPEL_DURATION = 3.0;    // s sin encuentros
-  let flashTimer = 0, repelTimer = 0, flashCooldown = 0;
+// Colores explícitos (no var() para el canvas)
+const COLOR_FLOOR_A = '#eef1f6';
+const COLOR_FLOOR_B = '#f6f8fb';
+const COLOR_WALL    = '#e8ebf0';
 
-  // Encuentros por avance (25%)
-  const ENCOUNTER_RATE = 0.25;   // 25% por baldosa
-  const ENCOUNTER_STEP = 1.0;    // se chequea cada 1 tile
-  let moveAcc = 0;
-  let lastDir = [1,0];
-  let encounterCooldown = 0.0;
+function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+function now(){ return performance.now()/1000; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+function fmtTime(sec){ sec=Math.max(0,Math.floor(sec)); const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return m+":"+s; }
 
-  // ---------- Estado ----------
-  const state = {
-    player:{x:3, y:3, hp:100, maxhp:100, baseDEF:0, baseCR:0, level:1, xp:0, score:0,
-            equipped:'cloth', inventory:['cloth'], keys:0, hasSword:false},
-    enemy:{x:26, y:13, hp:100, maxhp:100, alive:true},
-    friend:{x:6, y:6},
-    bossDefeated:false,
-    gameWon:false,
-    muted:false
-  };
+/* =========================
+   Banco de preguntas (STEM)
+   cat ∈ {Ciencia, Tecnología, Ingeniería, Matemáticas}
+========================= */
+const QUESTION_BANK = [
+  // Ciencia
+  {cat:"Ciencia", text:"¿Cuál estructura celular contiene la información genética principal en células eucariotas?", opts:["Mitocondria","Ribosoma","Núcleo","Aparato de Golgi"], correct:2},
+  {cat:"Ciencia", text:"El agua hierve a menor temperatura en lugares altos porque:", opts:["La presión atmosférica es menor","El oxígeno es mayor","El punto triple cambia","El pH del agua disminuye"], correct:0},
+  {cat:"Ciencia", text:"La fotosíntesis convierte energía:", opts:["Química → lumínica","Lumínica → química","Térmica → química","Mecánica → eléctrica"], correct:1},
+  {cat:"Ciencia", text:"Un aumento de la temperatura generalmente ______ la solubilidad de un sólido en un líquido.", opts:["disminuye","no cambia","aumenta","invierte"], correct:2},
 
-  // ---------- Persistencia ----------
-  try{
-    const saved=JSON.parse(localStorage.getItem('rpg_edu_lab')||'{}');
-    if (saved.player) Object.assign(state.player, saved.player);
-    if (saved.enemy) Object.assign(state.enemy, saved.enemy);
-    if (typeof saved.muted==='boolean') state.muted=saved.muted;
-    if (typeof saved.bossDefeated==='boolean') state.bossDefeated=saved.bossDefeated;
-    if (typeof saved.gameWon==='boolean') state.gameWon=saved.gameWon;
-  }catch(e){}
-  function persist(){
-    localStorage.setItem('rpg_edu_lab', JSON.stringify({player:state.player, enemy:state.enemy, muted:state.muted, bossDefeated:state.bossDefeated, gameWon:state.gameWon}));
-  }
+  // Tecnología
+  {cat:"Tecnología", text:"HTTPS añade al protocolo HTTP principalmente:", opts:["Compresión","Estado","Cifrado/TLS","Balanceo"], correct:2},
+  {cat:"Tecnología", text:"Un algoritmo con complejidad O(n log n) es típico de:", opts:["Búsqueda lineal","Quicksort/Mergesort","Búsqueda binaria","Fuerza bruta de contraseñas"], correct:1},
+  {cat:"Tecnología", text:"El almacenamiento no volátil significa que:", opts:["Pierde datos al apagarse","Requiere energía continua","Conserva datos sin energía","Solo existe en RAM"], correct:2},
+  {cat:"Tecnología", text:"Un ‘commit’ en control de versiones sirve para:", opts:["Compilar el proyecto","Guardar un punto de cambio con mensaje","Crear un servidor","Instalar dependencias"], correct:1},
 
-  // ---------- Canvas con doble buffer ----------
-  const cv = document.getElementById('cv');
-  const ctx = cv.getContext('2d');
-  const back = document.createElement('canvas');
-  back.width = cv.width; back.height = cv.height;
-  const bx = back.getContext('2d');
+  // Ingeniería
+  {cat:"Ingeniería", text:"La ley de Ohm se expresa como:", opts:["P=V·I","V=I·R","E=m·c²","F=m·a"], correct:1},
+  {cat:"Ingeniería", text:"Para disminuir la resonancia de una estructura, usualmente se:", opts:["Aumenta amortiguamiento","Reduce rigidez","Aumenta la frecuencia natural hacia la excitación","Elimina masa"], correct:0},
+  {cat:"Ingeniería", text:"Un diagrama de fuerza cortante se usa en:", opts:["Circuits DC","Vigas y flexión","Termodinámica","Transmisión óptica"], correct:1},
+  {cat:"Ingeniería", text:"El factor de seguridad FS se define como:", opts:["Carga última / Carga de trabajo","Carga de trabajo / Carga última","Esfuerzo admisible / Esfuerzo real","Masa / Volumen"], correct:0},
 
-  // ---------- Util ----------
-  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
-  function dist(ax,ay,bx,by){ return Math.hypot(ax-bx, ay-by); }
-  function getCSS(name){ return getComputedStyle(document.documentElement).getPropertyValue(name); }
-  function rnd(a,b){ return a + Math.random()*(b-a); }
-  function irnd(a,b){ return Math.floor(rnd(a,b+1)); }
-  const log = document.getElementById('log');
-  function info(t){ log.textContent = t; }
+  // Matemáticas
+  {cat:"Matemáticas", text:"La derivada de f(x)=x² es:", opts:["2x","x","x³","2"], correct:0},
+  {cat:"Matemáticas", text:"Si A es el 30% de B, entonces B es:", opts:["0.3·A","3.33·A","A/3.33","A/0.7"], correct:1},
+  {cat:"Matemáticas", text:"La pendiente de la recta entre (0,3) y (6,15) es:", opts:["1","2","3","4"], correct:1},
+  {cat:"Matemáticas", text:"La media de 2, 5, 9 y x es 8. Entonces x es:", opts:["12","14","16","18"], correct:2},
+];
 
-  // ---------- Audio ----------
-  let audioCtx=null, gainNode=null;
-  function ensureAudio(){
-    if (!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); gainNode = audioCtx.createGain(); gainNode.gain.value = SOUND_GAIN; gainNode.connect(audioCtx.destination); }
-  }
-  function beep(freq=880, dur=0.12){
-    if (state.muted) return;
-    ensureAudio();
-    const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-    o.type='sine'; o.frequency.value=freq; g.gain.value=0.0001;
-    o.connect(g); g.connect(gainNode);
-    const t=audioCtx.currentTime;
-    g.gain.exponentialRampToValueAtTime(0.3, t+0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
-    o.start(t); o.stop(t+dur+0.02);
-  }
-  const btMute = document.getElementById('btMute');
-  function updateMuteBtn(){ btMute.textContent = state.muted ? '🔇 Silenciado' : '🔈 Sonido'; btMute.setAttribute('aria-pressed', state.muted?'true':'false'); }
-  btMute.onclick = () => { state.muted = !state.muted; updateMuteBtn(); persist(); };
-
-  // ---------- Resplandor ----------
-  const btFlash = document.getElementById('btFlash');
-  function updateFlashBtn(){
-    if (flashTimer>0){ btFlash.textContent = `✨ Activo (${flashTimer.toFixed(2)}s)`; btFlash.setAttribute('aria-pressed','true'); }
-    else if (flashCooldown>0){ btFlash.textContent = `✨ Recarga (${flashCooldown.toFixed(1)}s)`; btFlash.setAttribute('aria-pressed','false'); }
-    else { btFlash.textContent = '✨ Resplandor (F)'; btFlash.setAttribute('aria-pressed','false'); }
-  }
-  function triggerFlash(){
-    if (flashTimer>0 || flashCooldown>0) return;
-    flashTimer = FLASH_DURATION;
-    repelTimer = REPEL_DURATION;
-    flashCooldown = FLASH_COOLDOWN;
-    // Ahuyenta enemigo actual si existe
-    if (state.enemy.alive){ state.enemy.alive=false; info('¡Resplandor! El enemigo huye. Encuentros bloqueados por 3 s.'); }
-    encounterCooldown = Math.max(encounterCooldown, REPEL_DURATION);
-    // espanta murciélagos
-    BATS.length = 0; batRespawn = 5;
-    try { beep(1400,.08); setTimeout(()=>beep(900,.08), 50); } catch(_){}
-    updateFlashBtn();
-  }
-  btFlash.onclick = triggerFlash;
-
-  // ---------- Input ----------
-  const keys = Object.create(null);
-  window.addEventListener('keydown', e=>{ keys[e.code]=true; handleKey(e); });
-  window.addEventListener('keyup', e=>{ keys[e.code]=false; });
-  function handleKey(e){
-    if (quizOpen()){
-      const n = parseInt(e.key,10);
-      if ([1,2,3,4].includes(n)){ const btn = document.querySelectorAll('#qChoices button')[n-1]; if (btn) btn.click(); }
-      if (e.code==='Escape' || e.code==='Enter'){ const next=document.getElementById('qNext'); if (next && next.style.display!=='none'){ next.click(); } }
-      return;
+/* =========================
+   Sonido simple
+========================= */
+const AudioSys = {
+  ctx:null, gain:null, musicGain:null,
+  ensure(){
+    if(!this.ctx){
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.gain = this.ctx.createGain(); this.gain.gain.value = Number(document.getElementById('volume').value);
+      this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = 0.07;
+      this.gain.connect(this.ctx.destination);
+      this.musicGain.connect(this.ctx.destination);
+      this.createMusic();
     }
-    if (invOpen()){
-      if (e.code==='Escape' || e.code==='KeyI') closeInv();
-      return;
+  },
+  beep(type='ok'){
+    if(!this.ctx || document.getElementById('mute').checked) return;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sine';
+    let f = 880;
+    if(type==='ok') f=880;
+    else if(type==='bad') f=220;
+    else if(type==='key') f=660;
+    else if(type==='door') f=520;
+    o.frequency.value=f;
+    g.gain.value=0.12;
+    o.connect(g); g.connect(this.gain);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime+0.18);
+    o.stop(this.ctx.currentTime+0.2);
+  },
+  createMusic(){
+    if(!this.ctx) return;
+    const ctx=this.ctx;
+    function playChord(root=261.63){
+      const freqs=[root, root*1.25, root*1.5, root*2];
+      freqs.forEach((f,i)=>{
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.type='sine'; o.frequency.value=f;
+        g.gain.value=0.0001;
+        o.connect(g); g.connect(AudioSys.musicGain);
+        const t=ctx.currentTime;
+        o.start(t+i*0.03);
+        g.gain.exponentialRampToValueAtTime(0.06, t+0.5+i*0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+4+i*0.03);
+        o.stop(t+4.2+i*0.03);
+      });
     }
-    if (e.code==='KeyI'){ toggleInv(); }
-    if (e.code==='KeyE'){ interact(); }
-    if (e.code==='KeyF'){ triggerFlash(); }
-    if (e.code==='Space'){ attack(); e.preventDefault(); }
+    setInterval(()=>{
+      if(document.getElementById('mute').checked) return;
+      playChord(261.63); setTimeout(()=>playChord(293.66), 2000);
+    }, 4000);
   }
+};
 
-  // ---------- Laberinto (mapa) ----------
-  // Generamos un laberinto ortogonal claro con paredes (#) y suelo (.)
-  const MAP = Array.from({length:ROWS}, (_,y)=>Array.from({length:COLS},(_,x)=> (y===0||y===ROWS-1||x===0||x===COLS-1)?'#':'.'));
+/* =========================
+   Mapa y salas
+========================= */
+function buildMap(){
+  const totalW = ROOM_COLS*(ROOM_W+1)+1;
+  const totalH = ROOM_ROWS*(ROOM_H+1)+1;
+  const grid = Array.from({length: totalH}, ()=>Array(totalW).fill(WALL));
+  const rooms=[];
 
-  // Paredes horizontales con aperturas
-  for (let y=3; y<ROWS-3; y+=4){
-    let gap = 2 + ((y*7) % (COLS-4));
-    for (let x=1; x<COLS-1; x++){
-      if (x===gap || x===gap+1) continue;
-      MAP[y][x] = '#';
+  // Interiores
+  for(let ry=0; ry<ROOM_ROWS; ry++){
+    for(let rx=0; rx<ROOM_COLS; rx++){
+      const x1 = rx*(ROOM_W+1)+1;
+      const y1 = ry*(ROOM_H+1)+1;
+      for(let y=y1; y<y1+ROOM_H; y++)
+        for(let x=x1; x<x1+ROOM_W; x++)
+          grid[y][x]=FLOOR;
+      rooms.push({rx,ry, x1, y1, x2:x1+ROOM_W-1, y2:y1+ROOM_H-1});
     }
   }
-  // Paredes verticales con aperturas
-  for (let x=5; x<COLS-3; x+=6){
-    let gap = 2 + ((x*5) % (ROWS-4));
-    for (let y=1; y<ROWS-1; y++){
-      if (y===gap || y===gap+1) continue;
-      MAP[y][x] = '#';
+  // Aperturas (pasillos)
+  for(const r of rooms){
+    if(r.rx<ROOM_COLS-1){
+      const y = Math.floor((r.y1 + r.y2)/2);
+      const x = r.x2+1; grid[y][x]=FLOOR;
+    }
+    if(r.ry<ROOM_ROWS-1){
+      const x = Math.floor((r.x1 + r.x2)/2);
+      const y = r.y2+1; grid[y][x]=FLOOR;
     }
   }
-  function isWall(x,y){ if (x<0||y<0||x>=COLS||y>=ROWS) return true; return MAP[y][x]==='#'; }
-  function collides(nx,ny){
-    const r = 0.35; // radio jugador
-    const pts = [
-      [nx-r, ny-r], [nx+r, ny-r],
-      [nx-r, ny+r], [nx+r, ny+r]
-    ];
-    return pts.some(([px,py])=> isWall(Math.floor(px), Math.floor(py)));
-  }
 
-  // Posiciones iniciales seguras
-  state.player.x = 2.5; state.player.y = 2.5;
-  state.friend.x = 6.5; state.friend.y = 6.5;
-  state.enemy.x = COLS-3.5; state.enemy.y = ROWS-3.5;
+  const topRight = rooms.find(r=>r.rx===ROOM_COLS-1 && r.ry===0);
+  const botLeft  = rooms.find(r=>r.rx===0 && r.ry===ROOM_ROWS-1);
+  const botRight = rooms.find(r=>r.rx===ROOM_COLS-1 && r.ry===ROOM_ROWS-1);
 
-  // Puerta y llaves
-  const door = {x:COLS-2.5, y:ROWS-2.5};
-  MAP[Math.floor(door.y)][Math.floor(door.x)] = '.';
-  const KEYS=[];
-  function randomFloor(){
-    let x,y; let ok=false;
-    while(!ok){
-      x=irnd(1,COLS-2); y=irnd(1,ROWS-2);
-      if (!isWall(x,y) && (Math.floor(door.x)!==x || Math.floor(door.y)!==y)) ok=true;
-    }
-    return {x:x+0.5,y:y+0.5};
-  }
-  for(let i=0;i<3;i++){ const p=randomFloor(); KEYS.push({x:p.x,y:p.y,found:false}); }
+  const startTile = { x: botRight.x2, y: botRight.y2 };
 
-  function checkKeyPickup(){
-    for(const k of KEYS){
-      if(!k.found && dist(state.player.x,state.player.y,k.x,k.y)<0.6){
-        k.found=true;
-        state.player.keys++;
-        info(`Llave encontrada (${state.player.keys}/3)`);
-        syncUI(); persist();
+  // Puerta y cámara de salida (fuera del muro derecho de la sala sup. derecha)
+  const doorY = Math.floor((topRight.y1 + topRight.y2)/2);
+  const doorX = topRight.x2+1;
+  for(let yy=doorY-1; yy<=doorY+1; yy++)
+    for(let xx=doorX+1; xx<=doorX+3 && xx<grid[0].length; xx++)
+      grid[yy][xx]=FLOOR;
+  grid[doorY][doorX] = DOOR;
+  const exitX = Math.min(doorX+3, grid[0].length-2);
+  const exitY = doorY; grid[exitY][exitX] = EXIT;
+
+  // Llave
+  const keyX = botLeft.x1, keyY = botLeft.y2; grid[keyY][keyX] = KEY;
+
+  return {grid, rooms, start:startTile, door:{x:doorX, y:doorY}, exit:{x:exitX, y:exitY}, key:{x:keyX,y:keyY}};
+}
+
+/* =========================
+   Spawn de murciélagos (N por sala)
+========================= */
+function spawnBats(rooms, objects, grid){
+  const bats = [];
+  for(const r of rooms){
+    let placed = 0, tries = 0;
+    while(placed < BATS_PER_ROOM && tries < 2000){
+      const x = randInt(r.x1, r.x2);
+      const y = randInt(r.y1, r.y2);
+      const occupied = (objects.start.x===x && objects.start.y===y) ||
+                       (objects.key.x===x && objects.key.y===y) ||
+                       (objects.door.x===x && objects.door.y===y) ||
+                       (objects.exit.x===x && objects.exit.y===y) ||
+                       bats.some(b=>b.x===x && b.y===y);
+      if(grid[y][x]===FLOOR && !occupied){
+        bats.push({x,y,rx:r.rx,ry:r.ry, room:r, alive:true, nextStep:0});
+        placed++;
       }
+      tries++;
+    }
+  }
+  return bats;
+}
+
+/* =========================
+   Estado + Cámara (suavizado)
+========================= */
+const Game = {
+  grid:null, rooms:null, width:0, height:0,
+  player:{x:0,y:0, hasKey:false, hearts:MAX_HEARTS, facing:{dx:-1,dy:0}},
+  bats:[],
+  door:null, exit:null, key:null,
+  state:STATE.PLAYING,
+  timeLeft:TOTAL_TIME,
+  safeUntil:0,
+  torchReadyAt:0,
+  qStats:{ total:0, ok:0, bad:0, byCat:{} },
+  moving:false,
+  fadeAlpha:0,
+};
+
+const Camera = {
+  x:0, y:0, tx:0, ty:0,
+  updateTargets(){
+    const worldW = Game.width*TILE, worldH = Game.height*TILE;
+    const halfW = canvas.width/2, halfH = canvas.height/2;
+    const cx = Game.player.x*TILE + TILE/2, cy = Game.player.y*TILE + TILE/2;
+    this.tx = clamp(cx, halfW, Math.max(halfW, worldW - halfW));
+    this.ty = clamp(cy, halfH, Math.max(halfH, worldH - halfH));
+  },
+  step(dt){
+    const smoothing = 1 - Math.pow(0.001, dt); // lerp exponencial
+    this.x += (this.tx - this.x) * smoothing;
+    this.y += (this.ty - this.y) * smoothing;
+  }
+};
+
+function resetGame(){
+  const {grid, rooms, start, door, exit, key} = buildMap();
+  Game.grid=grid; Game.rooms=rooms; Game.width=grid[0].length; Game.height=grid.length;
+  Game.player.x=start.x; Game.player.y=start.y; Game.player.hasKey=false; Game.player.hearts=MAX_HEARTS; Game.player.facing={dx:-1,dy:0};
+  Game.door=door; Game.exit=exit; Game.key=key;
+  Game.bats = spawnBats(rooms, {start, door, exit, key}, grid);
+  Game.state=STATE.PLAYING; Game.timeLeft=TOTAL_TIME; Game.safeUntil=0; Game.torchReadyAt=0;
+  Game.qStats = { total:0, ok:0, bad:0, byCat:{} }; Game.moving=false; Game.fadeAlpha=0;
+  updateHUD(); hideVictory();
+  Camera.updateTargets(); Camera.x = Camera.tx; Camera.y = Camera.ty;
+}
+
+/* =========================
+   Canvas y render
+========================= */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas(){
+  const hudH = document.getElementById('hud').offsetHeight || 72;
+  canvas.width  = Math.max(640, Math.floor(window.innerWidth));
+  canvas.height = Math.max(400, Math.floor(window.innerHeight - hudH));
+}
+window.addEventListener('resize', ()=>{ resizeCanvas(); Camera.updateTargets(); });
+
+function worldToScreen(x,y){
+  const px = Math.floor(x*TILE - (Camera.x - canvas.width/2));
+  const py = Math.floor(y*TILE - (Camera.y - canvas.height/2));
+  return {px,py};
+}
+
+function getFloorColor(x,y){ return ((x+y)%4===0) ? COLOR_FLOOR_A : COLOR_FLOOR_B; }
+function getWallColor(){ return COLOR_WALL; }
+
+function drawScene(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Rango visible
+  const halfW = canvas.width/2, halfH = canvas.height/2;
+  const left   = Math.floor((Camera.x - halfW)/TILE) - 2;
+  const right  = Math.ceil((Camera.x + halfW)/TILE) + 2;
+  const top    = Math.floor((Camera.y - halfH)/TILE) - 2;
+  const bottom = Math.ceil((Camera.y + halfH)/TILE) + 2;
+
+  for(let y=Math.max(0,top); y<=Math.min(Game.height-1,bottom); y++){
+    for(let x=Math.max(0,left); x<=Math.min(Game.width-1,right); x++){
+      const t = Game.grid[y][x];
+      const s = worldToScreen(x,y);
+      ctx.fillStyle = (t===WALL) ? getWallColor() : getFloorColor(x,y);
+      ctx.fillRect(s.px, s.py, TILE, TILE);
     }
   }
 
-  // ---------- Murciélagos ----------
-  const BAT_COUNT = 10;
-  const BATS = [];
-  let batRespawn = 0;
-  function spawnBat(){
-    // Encuentra un piso aleatorio
-    let bx=2.5, by=2.5;
-    for (let t=0;t<200;t++){
-      const x = irnd(2,COLS-3) + 0.5;
-      const y = irnd(2,ROWS-3) + 0.5;
-      if (!isWall(Math.floor(x), Math.floor(y))){ bx=x; by=y; break; }
-    }
-    return {
-      x:bx, y:by,
-      dir: Math.random()*Math.PI*2,
-      spd: rnd(2.0, 3.8),     // tiles/seg
-      wing: Math.random()*Math.PI*2,
-      wiggle: rnd(0.7, 1.3),  // amplitud sinusoidal
-      hue: irnd(200,260)      // tono para leve variación
-    };
-  }
-  for (let i=0;i<BAT_COUNT;i++) BATS.push(spawnBat());
+  // Llave
+  if(Game.grid[Game.key.y][Game.key.x]===KEY){ drawKey(Game.key.x, Game.key.y); }
+  // Puerta / Salida
+  if(Game.grid[Game.door.y][Game.door.x]===DOOR){ drawDoor(Game.door.x, Game.door.y, false); }
+  drawExit(Game.exit.x, Game.exit.y);
 
-  function stepBats(dt){
-    if (BATS.length===0){
-      if (batRespawn>0){ batRespawn=Math.max(0, batRespawn-dt); if (batRespawn===0){ for(let i=0;i<BAT_COUNT;i++) BATS.push(spawnBat()); } }
+  // Bats
+  for(const b of Game.bats){ if(b.alive) drawBat(b); }
+  // Jugador
+  drawPlayer();
+
+  // Overlay seguro por sala
+  if(now()<Game.safeUntil){
+    ctx.fillStyle = 'rgba(255, 243, 205, 0.22)';
+    const r = currentRoomOf(Game.player.x, Game.player.y);
+    if(r){
+      const s = worldToScreen(r.x1, r.y1);
+      ctx.fillRect(s.px, s.py, (r.x2-r.x1+1)*TILE, (r.y2-r.y1+1)*TILE);
+    }
+  }
+
+  // Fundido de muerte
+  if(Game.state===STATE.DEFEAT_HP || Game.state===STATE.DEFEAT_T){
+    ctx.fillStyle = `rgba(0,0,0,${Game.fadeAlpha})`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+}
+
+/* =========================
+   Sprites
+========================= */
+function drawKey(tx,ty){
+  const s=worldToScreen(tx,ty); const x=s.px, y=s.py;
+  ctx.fillStyle = '#f1c40f';
+  ctx.fillRect(x+8, y+14, 16, 4);
+  ctx.beginPath(); ctx.arc(x+24, y+16, 4, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#f39c12'; ctx.fillRect(x+18, y+12, 4, 4);
+}
+function drawDoor(tx,ty,open){
+  const s=worldToScreen(tx,ty); const x=s.px, y=s.px? s.py : s.py; // segura
+  ctx.fillStyle = open ? '#c7ecee' : '#d4a017';
+  ctx.fillRect(x+2, y+2, TILE-4, TILE-4);
+  if(!open){ ctx.fillStyle = '#8e5a0a'; ctx.fillRect(x+TILE/2-2, y+TILE/2-6, 4, 12); }
+}
+function drawExit(tx,ty){
+  const s=worldToScreen(tx,ty); const x=s.px, y=s.py;
+  ctx.fillStyle = '#2ecc71';
+  ctx.fillRect(x+6, y+6, TILE-12, TILE-12);
+  ctx.fillStyle = '#27ae60';
+  ctx.fillRect(x+10, y+10, TILE-20, TILE-20);
+}
+function drawBat(b){
+  const s=worldToScreen(b.x,b.y); const x=s.px, y=s.py;
+  const t = performance.now();
+  const phase = Math.sin((t%BAT_WING_PERIOD)/BAT_WING_PERIOD * Math.PI*2);
+  const wing = 6 + Math.floor(4*phase);
+  ctx.fillStyle = "#2d3436";
+  ctx.fillRect(x+12, y+12, 8, 8); // cuerpo
+  ctx.beginPath(); // ala izq
+  ctx.moveTo(x+12, y+16); ctx.lineTo(x+4, y+16-wing); ctx.lineTo(x+4, y+16+wing); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); // ala der
+  ctx.moveTo(x+20, y+16); ctx.lineTo(x+28, y+16-wing); ctx.lineTo(x+28, y+16+wing); ctx.closePath(); ctx.fill();
+}
+
+/* =========================
+   Personaje humanoide + ojos + paso
+========================= */
+function drawPlayer(){
+  const s=worldToScreen(Game.player.x, Game.player.y); const x=s.px, y=s.py;
+  const t = performance.now();
+  const bob = Game.moving ? Math.sin(t/120)*1.5 : 0;
+
+  // Tronco
+  ctx.fillStyle = '#0c7bdc';
+  ctx.fillRect(x+8, y+6 + bob, TILE-16, TILE-10);
+
+  // Cabeza
+  ctx.fillStyle = '#74b9ff';
+  ctx.beginPath(); ctx.arc(x+TILE/2, y+8 + bob, 7, 0, Math.PI*2); ctx.fill();
+
+  // Ojos
+  const f = Game.player.facing; const eyeOffsetX = clamp(f.dx*2, -2, 2); const eyeOffsetY = clamp(f.dy*2, -2, 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(x+TILE/2 - 3, y+8 + bob, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+TILE/2 + 3, y+8 + bob, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(x+TILE/2 - 3 + eyeOffsetX*0.7, y+8 + eyeOffsetY*0.7 + bob, 1.3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x+TILE/2 + 3 + eyeOffsetX*0.7, y+8 + eyeOffsetY*0.7 + bob, 1.3, 0, Math.PI*2); ctx.fill();
+
+  // Brazos
+  ctx.fillStyle = '#0b6fc5';
+  ctx.fillRect(x+5,  y+10 + bob, 3, 8);
+  ctx.fillRect(x+TILE-8, y+10 + bob, 3, 8);
+
+  // Piernas
+  const legSwing = Game.moving ? Math.sin(t/100)*2 : 0;
+  ctx.fillStyle = '#084f8a';
+  ctx.fillRect(x+10 + legSwing, y+TILE-12, 4, 10);
+  ctx.fillRect(x+TILE-14 - legSwing, y+TILE-12, 4, 10);
+
+  // Icono de llave
+  if(Game.player.hasKey){
+    ctx.fillStyle = '#f1c40f'; ctx.fillRect(x+TILE-12, y+TILE-12, 8, 4);
+    ctx.fillStyle = '#f39c12'; ctx.fillRect(x+TILE-10, y+TILE-14, 4, 4);
+  }
+}
+
+/* =========================
+   Entrada / movimiento
+========================= */
+const keys = new Set();
+let lastMoveTime=0;
+const MOVE_DELAY = 0.08;
+
+document.addEventListener('keydown', (e)=>{
+  if(Game.state===STATE.ASKING) return;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyF'].includes(e.code)) e.preventDefault();
+  if(!AudioSys.ctx) AudioSys.ensure();
+  keys.add(e.code);
+  handleInstantKeys(e.code);
+});
+document.addEventListener('keyup', (e)=>{ keys.delete(e.code); });
+
+function handleInstantKeys(code){
+  if(Game.state!==STATE.PLAYING) return;
+  if(code==='KeyF') useTorch();
+}
+
+function updateInput(){
+  if(Game.state!==STATE.PLAYING) return;
+  const t=now();
+  if(t-lastMoveTime<MOVE_DELAY){ Game.moving=false; return; }
+  let dx=0, dy=0;
+  if(keys.has('ArrowUp')||keys.has('KeyW')) dy=-1;
+  else if(keys.has('ArrowDown')||keys.has('KeyS')) dy=1;
+  else if(keys.has('ArrowLeft')||keys.has('KeyA')) dx=-1;
+  else if(keys.has('ArrowRight')||keys.has('KeyD')) dx=1;
+
+  if(dx||dy){
+    Game.player.facing = {dx,dy};
+    tryMove(dx,dy);
+    lastMoveTime=t;
+    Game.moving=true;
+  } else {
+    Game.moving=false;
+  }
+}
+
+function inBounds(x,y){ return y>=0 && y<Game.height && x>=0 && x<Game.width; }
+function isWall(x,y){ return Game.grid[y][x]===WALL; }
+function isDoor(x,y){ return Game.grid[y][x]===DOOR; }
+function isExit(x,y){ return Game.grid[y][x]===EXIT; }
+function isKey(x,y){ return Game.grid[y][x]===KEY; }
+
+function currentRoomOf(x,y){ return Game.rooms.find(r=>x>=r.x1 && x<=r.x2 && y>=r.y1 && y<=r.y2); }
+
+function tryMove(dx,dy){
+  const nx = Game.player.x+dx;
+  const ny = Game.player.y+dy;
+  if(!inBounds(nx,ny)) return;
+  if(isWall(nx,ny)) return;
+
+  // Puerta: bloquea si no tiene llave
+  if(isDoor(nx,ny) && !Game.player.hasKey){
+    setStatus("La puerta está cerrada. Necesitas la llave.");
+    return;
+  }
+  // Abrir puerta si tiene llave
+  if(isDoor(nx,ny) && Game.player.hasKey){
+    Game.grid[Game.door.y][Game.door.x]=FLOOR;
+    AudioSys.beep('door');
+  }
+
+  Game.player.x=nx; Game.player.y=ny;
+
+  // Recoger llave
+  if(isKey(nx,ny)){
+    Game.player.hasKey=true;
+    Game.grid[Game.key.y][Game.key.x]=FLOOR;
+    AudioSys.beep('key');
+    setStatus("Llave dorada obtenida.");
+  }
+
+  // Salida: SOLO con llave
+  if(isExit(nx,ny)){
+    if(Game.player.hasKey){
+      Game.state=STATE.VICTORY;
+      showVictory();
       return;
-    }
-    for (const b of BATS){
-      b.wing += dt*18;
-      // Movimiento con leve zigzag
-      const zig = Math.sin(performance.now()/300 + b.wing)*0.5 * 0.6;
-      let vx = Math.cos(b.dir + zig)*b.spd*dt;
-      let vy = Math.sin(b.dir + zig)*b.spd*dt;
-      const nx = b.x + vx, ny = b.y + vy;
-      if (isWall(Math.floor(nx), Math.floor(ny))){
-        // rebote
-        b.dir += Math.PI/2 + rnd(-0.4,0.4);
-      } else {
-        b.x=nx; b.y=ny;
-      }
-      // leve drift de dirección
-      b.dir += rnd(-0.15,0.15)*dt;
-    }
-  }
-
-  function drawBat(g, b){
-    const [px,py] = [Math.floor(b.x*TILE), Math.floor(b.y*TILE)];
-    const wing = Math.sin(b.wing)*8+10;
-    g.save();
-    g.translate(px, py);
-    g.fillStyle = '#30364a';
-    g.strokeStyle = 'rgba(0,0,0,.15)';
-    // cuerpo
-    g.beginPath(); g.ellipse(0, 0, 6, 4, 0, 0, Math.PI*2); g.fill();
-    // cabeza
-    g.beginPath(); g.ellipse(-4, -3, 3, 3, 0, 0, Math.PI*2); g.fill();
-    // alas
-    g.beginPath(); g.moveTo(0,0); g.lineTo(-14, -wing); g.lineTo(-8, 0); g.closePath(); g.fill();
-    g.beginPath(); g.moveTo(0,0); g.lineTo(14, -wing); g.lineTo(8, 0); g.closePath(); g.fill();
-    g.restore();
-  }
-
-  function drawKeys(g){
-    for(const k of KEYS){
-      if(k.found) continue;
-      const [px,py]=toXY(k.x-0.5,k.y-0.5);
-      g.fillStyle='#ffd24d';
-      g.beginPath(); g.moveTo(px+16,py+8); g.lineTo(px+22,py+16); g.lineTo(px+16,py+24); g.lineTo(px+10,py+16); g.closePath(); g.fill();
-    }
-  }
-
-  function drawDoor(g){
-    const [px,py]=toXY(door.x-0.5,door.y-0.5);
-    g.fillStyle = state.bossDefeated ? '#6be36b' : '#d4a243';
-    g.fillRect(px,py,TILE,TILE);
-  }
-
-  // ---------- Movimiento (delta-time) + encuentros ----------
-  function stepPlayer(dt){
-    const p=state.player;
-    const speed = 5.5; // tiles/seg
-    let vx=0, vy=0;
-    if (keys['ArrowUp']||keys['KeyW']) vy-=1;
-    if (keys['ArrowDown']||keys['KeyS']) vy+=1;
-    if (keys['ArrowLeft']||keys['KeyA']) vx-=1;
-    if (keys['ArrowRight']||keys['KeyD']) vx+=1;
-    const len = Math.hypot(vx,vy)||1;
-    let nx = p.x + (vx/len)*speed*dt;
-    let ny = p.y + (vy/len)*speed*dt;
-    // colisiones por ejes
-    if (!collides(nx, p.y)) p.x = clamp(nx, 0.75, COLS-0.75);
-    if (!collides(p.x, ny)) p.y = clamp(ny, 0.75, ROWS-0.75);
-    const dx = p.x - (nx - (vx/len)*speed*dt);
-    const dy = p.y - (ny - (vy/len)*speed*dt);
-    const d=Math.hypot(dx,dy);
-    if (d>0){
-      lastDir=[dx/d,dy/d];
-      moveAcc += d;
-      while (moveAcc >= ENCOUNTER_STEP){
-        moveAcc -= ENCOUNTER_STEP;
-        tryEncounter();
-      }
-    }
-    checkKeyPickup();
-  }
-
-  function tryEncounter(){
-    if (quizOpen() || invOpen() || encounterCooldown>0 || repelTimer>0) return;
-    if (Math.random() < ENCOUNTER_RATE){
-      spawnEnemyAhead();
-      startQuiz('enemy');
-      encounterCooldown = 0.5; // corta racha
-    }
-  }
-  function spawnEnemyAhead(){
-    const p=state.player, e=state.enemy;
-    const nx = clamp(p.x + lastDir[0]*2, 1.5, COLS-1.5);
-    const ny = clamp(p.y + lastDir[1]*2, 1.5, ROWS-1.5);
-    if (!isWall(Math.floor(nx), Math.floor(ny))){
-      e.x = nx; e.y = ny; e.hp = e.maxhp; e.alive = true;
     } else {
-      // busca un lugar cercano libre
-      for (let r=1;r<5;r++){
-        const tx = clamp(p.x + (Math.random()*2-1)*r, 1.5, COLS-1.5);
-        const ty = clamp(p.y + (Math.random()*2-1)*r, 1.5, ROWS-1.5);
-        if (!isWall(Math.floor(tx), Math.floor(ty))){ e.x=tx; e.y=ty; e.hp=e.maxhp; e.alive=true; break; }
-      }
+      setStatus("Para salir, primero abre la puerta con la llave.");
     }
   }
 
-  // ---------- Ataque físico corto ----------
-  let swingTimer = 0;
-  function attack(){
-    swingTimer = 0.18;
-    const p=state.player, e=state.enemy;
-    if (e.alive && dist(p.x,p.y,e.x,e.y) < 1.4){
-      const dmg = Math.max(1, 6 + Math.floor(statCR()*0.5));
-      e.hp = clamp(e.hp - dmg, 0, e.maxhp);
-      const ang = Math.atan2(e.y-p.y, e.x-p.x);
-      e.x = clamp(e.x + Math.cos(ang)*0.35, 0.75, COLS-0.75);
-      e.y = clamp(e.y + Math.sin(ang)*0.35, 0.75, ROWS-0.75);
-      beep(620,.08); info(`Golpeaste al enemigo (-${dmg} HP).`);
-      if (e.hp<=0){ e.alive=false; info('Enemigo cayó. Sigue explorando o interactúa con E.'); }
-      persist();
-    } else {
-      info('No hay enemigo cerca.');
-    }
+  // Colisión con murciélagos (si no hay 'seguro')
+  if(now()>Game.safeUntil){
+    const bat = Game.bats.find(b=>b.alive && b.x===nx && b.y===ny);
+    if(bat){ bat.alive=false; launchQuiz(7); }
   }
 
-  // ---------- NPCs ----------
-  function interact(){
-    const p=state.player, e=state.enemy, f=state.friend;
-    if (dist(p.x,p.y,f.x,f.y) < 1.6){
-      if (!p.hasSword){ p.hasSword=true; p.baseDEF+=2; info('Tu amigo te entregó una espada (+2 DEF).'); syncUI(); persist(); }
-      else startQuiz('mentor');
-      return;
-    }
-    if (dist(p.x,p.y,door.x,door.y) < 1.6){
-      if (p.keys < 3){ info(`La puerta está cerrada. Llaves ${p.keys}/3.`); return; }
-      if (!state.bossDefeated){ startQuiz('boss'); return; }
-      if (!state.gameWon){ state.gameWon=true; info('🎉 ¡Felicidades! Has ganado el juego!'); persist(); }
-      return;
-    }
-    if (e.alive && dist(p.x,p.y,e.x,e.y) < 1.6){ startQuiz('enemy'); return; }
-    info('Acércate al Amigo, la Puerta o un Enemigo para interactuar.');
-  }
+  Camera.updateTargets(); // actualizar destino de cámara
+}
 
-  // ---------- Inventario / equipo ----------
-  const ARMORS=[
-    {id:'cloth',  name:'Ropaje de Aprendiz', hp:+0,  def:+0, cr:+0, desc:'Ligera. Sin bonificación.'},
-    {id:'leather',name:'Armadura de Cuero',  hp:+15, def:+1, cr:+0, desc:'Resistencia básica.'},
-    {id:'chain',  name:'Cota de Malla',      hp:+30, def:+2, cr:+0, desc:'Protección media.'},
-    {id:'sage',   name:'Túnica del Sabio',   hp:+10, def:+1, cr:+2, desc:'Inspira creatividad (+2).'}
-  ];
-  function equippedObj(){ return ARMORS.find(a=>a.id===state.player.equipped)||null; }
-  function statDEF(){ return state.player.baseDEF + (equippedObj()?.def||0); }
-  function statCR(){ return state.player.baseCR + (equippedObj()?.cr||0); }
-  function statMaxHP(){ return state.player.maxhp + (equippedObj()?.hp||0); }
+/* =========================
+   Antorcha
+========================= */
+function useTorch(){
+  const t=now();
+  if(t < Game.torchReadyAt) return;
+  Game.safeUntil = t + TORCH_SAFE;
+  Game.torchReadyAt = t + TORCH_CD;
+  const r = currentRoomOf(Game.player.x, Game.player.y);
+  if(r){ for(const b of Game.bats){ if(b.alive && b.rx===r.rx && b.ry===r.ry){ b.alive=false; } } }
+  setStatus("Sala despejada. Seguridad 5 s.");
+  updateHUD();
+}
 
-  const olInv=document.getElementById('olInv');
-  const invGrid=document.getElementById('invGrid');
-  const eqName=document.getElementById('eqName');
-  const eqHP=document.getElementById('eqHP');
-  const eqDEF=document.getElementById('eqDEF');
-  const eqCR=document.getElementById('eqCR');
-  document.getElementById('btCloseInv').onclick = closeInv;
-  function invOpen(){ return olInv.style.display==='flex'; }
-  function openInv(){
-    invGrid.innerHTML='';
-    state.player.inventory.forEach(id=>{
-      const it=ARMORS.find(a=>a.id===id);
-      const d=document.createElement('div'); d.className='slot';
-      d.innerHTML=`<h4>${it.name}</h4><div class="muted">${it.desc}</div>
-        <div class="muted">HP ${it.hp>=0?'+':''}${it.hp} · DEF ${it.def>=0?'+':''}${it.def} · CREAT ${it.cr>=0?'+':''}${it.cr}</div>
-        <div style="margin-top:6px"><button class="btn" data-equip="${it.id}">Equipar</button></div>`;
-      invGrid.appendChild(d);
-    });
-    invGrid.querySelectorAll('button[data-equip]').forEach(b=>b.onclick=()=>{ state.player.equipped=b.dataset.equip; syncUI(); refreshInvDetails(); persist(); });
-    refreshInvDetails();
-    olInv.style.display='flex';
-  }
-  function refreshInvDetails(){
-    const eq=equippedObj()||{name:'Ninguno',hp:0,def:0,cr:0};
-    eqName.textContent=eq.name; eqHP.textContent=eq.hp; eqDEF.textContent=eq.def; eqCR.textContent=eq.cr;
-  }
-  function closeInv(){ olInv.style.display='none'; }
-  function toggleInv(){ invOpen()?closeInv():openInv(); }
-
-  // ---------- Banco de preguntas (50+) ----------
-  const QUESTIONS = [
-    // Álgebra (bachillerato)
-    {q:'Resuelve: 2x + 3 = 11 → x = ?', a:['4','3','5','2'], i:0, tip:'Resta 3 y divide por 2.', cat:'Álgebra', diff:'baja'},
-    {q:'(x+2)(x-2) =', a:['x² - 4','x² + 4','x² - 2','x² + 2x - 4'], i:0, tip:'Diferencia de cuadrados.', cat:'Álgebra', diff:'baja'},
-    {q:'La pendiente de y=3x+1 es', a:['3','1','-3','0'], i:0, tip:'y=mx+b → m=3.', cat:'Álgebra', diff:'baja'},
-    {q:'Si 3a=12 entonces a=', a:['4','3','6','12'], i:0, tip:'Divide entre 3.', cat:'Álgebra', diff:'baja'},
-    {q:'| -7 | =', a:['7','-7','0','14'], i:0, tip:'Valor absoluto.', cat:'Álgebra', diff:'baja'},
-    {q:'(a+b)² =', a:['a²+2ab+b²','a²-ab+b²','a²+b²','2a²+2b²'], i:0, tip:'Binomio al cuadrado.', cat:'Álgebra', diff:'baja'},
-    {q:'Producto punto (1,2)·(3,4) =', a:['11','10','7','8'], i:0, tip:'1·3 + 2·4.', cat:'Álgebra', diff:'media'},
-    {q:'Si f(2)=5 y pendiente 2, entonces f(3)=', a:['7','6','9','5'], i:0, tip:'f(x)=2x+b.', cat:'Álgebra', diff:'baja'},
-    // Cálculo básico
-    {q:'d/dx (x³) =', a:['3x²','x²','3x','x³'], i:0, tip:'Potencias.', cat:'Cálculo', diff:'baja'},
-    {q:'d/dx (3x²) =', a:['6x','3x','x³','2x'], i:0, tip:'n·x^(n-1).', cat:'Cálculo', diff:'baja'},
-    {q:'Derivada de ln x =', a:['1/x','x','e^x','ln x'], i:0, tip:'x>0.', cat:'Cálculo', diff:'baja'},
-    {q:'∫ 1/x dx =', a:['ln|x| + C','1/(x²) + C','x + C','e^x + C'], i:0, tip:'Logaritmo natural.', cat:'Cálculo', diff:'baja'},
-    {q:'∫ 2x dx =', a:['x² + C','2x² + C','x + C','x²/2 + C'], i:0, tip:'Antiderivada.', cat:'Cálculo', diff:'baja'},
-    {q:'∫ 3x² dx =', a:['x³ + C','3x³ + C','x² + C','x³/3 + C'], i:0, tip:'∫x²= x³/3.', cat:'Cálculo', diff:'baja'},
-    {q:'∫₀¹ x dx =', a:['1/2','1','2','ln 2'], i:0, tip:'Triángulo base=1, altura=1.', cat:'Cálculo', diff:'baja'},
-    {q:'∫ cos x dx =', a:['sen x + C','-sen x + C','cos x + C','tan x + C'], i:0, tip:'d/dx(sen)=cos.', cat:'Cálculo', diff:'baja'},
-    {q:'d/dx (e^x) =', a:['e^x','x·e^x','1','0'], i:0, tip:'Invariante.', cat:'Cálculo', diff:'baja'},
-    {q:'Límite: limₓ→0 (sin x)/x =', a:['1','0','∞','-1'], i:0, tip:'Notable.', cat:'Cálculo', diff:'media'},
-    {q:'Área bajo y=2 entre x=0 y 3:', a:['6','3','2','9'], i:0, tip:'Rectángulo 3×2.', cat:'Cálculo', diff:'baja'},
-    {q:'Sustitución u=x² en ∫2x dx → ∫ du =', a:['u + C','2u + C','ln u + C','x + C'], i:0, tip:'du=2x dx.', cat:'Cálculo', diff:'baja'},
-    // Energía / Medioambiente
-    {q:'Unidad SI de irradiancia:', a:['W/m²','kWh','J','W'], i:0, tip:'Potencia por área.', cat:'Energía', diff:'baja'},
-    {q:'Panel FV convierte:', a:['Luz en electricidad','Calor a electricidad','Electricidad en luz','Movimiento en calor'], i:0, tip:'Efecto FV.', cat:'Energía', diff:'baja'},
-    {q:'Gas principal invernadero antropogénico:', a:['CO₂','O₂','N₂','Ar'], i:0, tip:'Combustibles fósiles.', cat:'Energía', diff:'baja'},
-    {q:'MPPT sirve para:', a:['Seguir punto de máxima potencia','Subir tensión de red','Proteger contra rayos','Sincronizar fase'], i:0, tip:'Maximiza V·I.', cat:'Energía', diff:'media'},
-    {q:'Factor que más reduce eficiencia FV:', a:['Alta temperatura','Bajo viento','Bajo albedo','Cables gruesos'], i:0, tip:'Coef. térmico.', cat:'Energía', diff:'media'},
-    // Agua / DBO / OD
-    {q:'DBO mide:', a:['Materia orgánica biodegradable','Sólidos suspendidos','Sales disueltas','pH'], i:0, tip:'Oxígeno consumido.', cat:'Agua', diff:'baja'},
-    {q:'OD significa:', a:['Oxígeno disuelto','Óxido disuelto','Osmosis directa','Oxígeno destilado'], i:0, tip:'mg/L de O₂.', cat:'Agua', diff:'baja'},
-    {q:'Unidades típicas de DBO5:', a:['mg/L','NTU','µS/cm','ppm CO₂'], i:0, tip:'Concentración.', cat:'Agua', diff:'baja'},
-    {q:'Alta turbidez suele:', a:['Disminuir OD','Aumentar OD','No afectar OD','Aumentar pH'], i:0, tip:'Menos luz → menos fotosíntesis.', cat:'Agua', diff:'media'},
-    {q:'Modelo Streeter–Phelps:', a:['Déficit de OD por vertidos','Floculación rápida','Remoción de nitratos','Evaporación'], i:0, tip:'Sagona de OD.', cat:'Agua', diff:'media'},
-    {q:'Conductividad eléctrica del agua:', a:['µS/cm','mg/L','NTU','ppm'], i:0, tip:'Sales disueltas.', cat:'Agua', diff:'baja'},
-    // IA básica
-    {q:'Aprendizaje supervisado usa:', a:['Datos con etiquetas','Datos sin etiquetas','Solo imágenes','Aleatorio'], i:0, tip:'X→y.', cat:'IA', diff:'baja'},
-    {q:'Overfitting es:', a:['Ajuste excesivo al entrenamiento','Datos insuficientes','Red muy pequeña','Ausencia de bias'], i:0, tip:'Mala generalización.', cat:'IA', diff:'media'},
-    {q:'Validación cruzada sirve para:', a:['Evaluar generalización','Aumentar parámetros','Bajar tasa de aprendizaje','Inferencia causal'], i:0, tip:'K-folds.', cat:'IA', diff:'media'},
-    {q:'Precision-Recall útil cuando:', a:['Clases desbalanceadas','Datos equilibrados','Series temporales','Imágenes 3D'], i:0, tip:'Positivos raros.', cat:'IA', diff:'media'},
-    {q:'Regularización L2 también:', a:['Ridge','Lasso','Elastic Net','Dropout'], i:0, tip:'Penaliza magnitudes.', cat:'IA', diff:'media'},
-    {q:'Una IA con leakage de test:', a:['Sobreestima desempeño','Subestima','Igual','Mejor regularizada'], i:0, tip:'Contaminación.', cat:'IA', diff:'media'},
-    {q:'Batch size grande tiende a:', a:['Suavizar gradientes','Introducir más ruido','Aumentar varianza','Romper convergencia'], i:0, tip:'Menos ruido.', cat:'IA', diff:'media'},
-    // Álgebra lineal / Series / Probabilidad / Multivariable (universidad)
-    {q:'Determinante de |2 3; 1 4|', a:['5','-5','8','2'], i:0, tip:'ad−bc=2·4−3·1.', cat:'Álgebra lineal', diff:'media'},
-    {q:'Autovalores de diag(2,3):', a:['2 y 3','1 y 5','0 y 1','3 y 5'], i:0, tip:'Matriz diagonal.', cat:'Álgebra lineal', diff:'baja'},
-    {q:'∑ (1/n²) (p-serie p=2):', a:['Converge','Diverge','Oscila','No definida'], i:0, tip:'p>1 converge.', cat:'Series', diff:'media'},
-    {q:'∫ x e^x dx =', a:['e^x(x−1)+C','e^x(x+1)+C','x e^x + C','e^x + C'], i:0, tip:'Partes.', cat:'Cálculo', diff:'media'},
-    {q:'lim (1+1/n)^n (n→∞) =', a:['e','1','0','2'], i:0, tip:'Definición de e.', cat:'Límites', diff:'media'},
-    {q:'P(2 caras en 2 lanzamientos justos)=', a:['1/4','1/2','1/3','3/4'], i:0, tip:'1/2·1/2.', cat:'Probabilidad', diff:'baja'},
-    {q:'Gradiente de f(x,y)=x²+y²', a:['(2x,2y)','(x,y)','(2,2)','(x²,y²)'], i:0, tip:'∂f/∂x=2x.', cat:'Multivariable', diff:'baja'},
-    {q:'Si det(A)=0, Ax=b', a:['Puede no tener única solución','Siempre única','Nunca tiene','Siempre infinitas'], i:0, tip:'Singular.', cat:'Álgebra lineal', diff:'media'},
-    {q:'∫₀^π sin x dx =', a:['2','0','1','π'], i:0, tip:'−cos x |0→π.', cat:'Cálculo', diff:'baja'},
-    {q:'Serie geométrica ∑ r^n con |r|<1:', a:['Converge a 1/(1−r)','Diverge','Converge a r/(1−r)','0'], i:0, tip:'Fórmula clásica.', cat:'Series', diff:'media'},
-    {q:'d/dx (ln(x²+1)) =', a:['(2x)/(x²+1)','1/(x²+1)','2/(x²+1)','x/(x²+1)'], i:0, tip:'Cadena.', cat:'Cálculo', diff:'media'},
-    {q:'Hessiana de x²+y² es', a:['diag(2,2)','diag(1,1)','0','diag(2,0)'], i:0, tip:'Segundas derivadas.', cat:'Multivariable', diff:'media'},
-    {q:'Varianza de moneda justa en 1=éxito:', a:['0.25','0.5','1','0'], i:0, tip:'p(1−p)=0.5·0.5.', cat:'Probabilidad', diff:'media'}
-  ];
-  // Validador y relleno de seguridad
-  function validateQuestions(){
-    const ok = QUESTIONS.every((o,idx)=>{
-      const valid = o && typeof o.q==='string' && Array.isArray(o.a) && o.a.length===4 &&
-                    Number.isInteger(o.i) && o.i>=0 && o.i<4 &&
-                    typeof o.cat==='string' && typeof o.diff==='string';
-      if (!valid) console.warn('Pregunta mal formada en índice', idx, o);
-      return valid;
-    });
-    if (!ok) console.warn('Revisa el banco de preguntas.');
-  }
-  if (QUESTIONS.length < 40){
-    for (let k=QUESTIONS.length; k<40; k++){
-      QUESTIONS.push({q:`Dummy ${k}`, a:['A','B','C','D'], i:0, tip:'', cat:'Extra', diff:'baja'});
-    }
-  }
-  validateQuestions();
-
-  // ---------- Quiz / Combate ----------
-  const olQuiz = document.getElementById('olQuiz');
-  const qChoices = document.getElementById('qChoices');
-  const qRes = document.getElementById('qRes');
-  const qNext = document.getElementById('qNext');
-  const pBar = document.getElementById('pBar');
-  const eBar = document.getElementById('eBar');
-  const qTitle = document.getElementById('qTitle');
-  const qCounter = document.getElementById('qCounter');
-  let quiz=null;
-
-  function quizOpen(){ return olQuiz.style.display==='flex'; }
-  function startQuiz(kind){
-    const rounds = kind==='boss'?5:QUIZ_ROUNDS;
-    const sel = pick(QUESTIONS, rounds);
-    quiz = { kind, idx:0, pHP:100, eHP:100, qs:sel, lock:false };
-    qRes.textContent=''; qNext.style.display='none';
-    olQuiz.style.display='flex';
-    renderQuestion();
-    info(kind==='mentor' ? 'Desafío amistoso del Mentor (más XP).' : (kind==='boss' ? '¡Enfrentas al jefe final!' : '¡Encuentro! Combate de conocimiento.'));
-  }
-  function renderQuestion(){
-    const cur = quiz.qs[quiz.idx];
-    qTitle.textContent = `${cur.cat} (${cur.diff})`;
-    qCounter.textContent = `(${quiz.idx+1}/${quiz.qs.length})`;
-    qChoices.innerHTML='';
-    cur.a.forEach((t,i)=>{
-      const b=document.createElement('button'); b.className='btn'; b.style.textAlign='left';
-      b.innerHTML=`<b>${i+1}.</b> ${t}`; b.onclick=()=>choose(i); qChoices.appendChild(b);
-    });
-    syncBars();
-  }
-  function choose(k){
-    if (quiz.lock) return; quiz.lock=true;
-    const cur = quiz.qs[quiz.idx];
-    if (k===cur.i){
-      const creativity = statCR();
-      const bonus = 6 + creativity;
-      quiz.eHP = clamp(quiz.eHP - (34 + bonus*0.25), 0, 100);
-      const baseXP = 20 + creativity*2;
-      const mult = quiz.kind==='mentor' ? FRIEND_BONUS_XP : 1;
-      gainXP(Math.round(baseXP*mult));
-      addScore(60);
-      qRes.innerHTML = `✅ <b>Correcto.</b> ${cur.tip?'<span class="muted">Tip: '+cur.tip+'</span>':''}`;
-      beep(900,.12);
-    } else {
-      const reduce = Math.max(10 - statDEF()*2, 4);
-      quiz.pHP = clamp(quiz.pHP - (32 + reduce), 0, 100);
-      qRes.innerHTML = `❌ <b>Incorrecto.</b> Correcta: <b>${cur.a[cur.i]}</b>. Tu DEF (${statDEF()}) reduce el daño.`;
-      beep(280,.16);
-    }
-    syncBars();
-    if (quiz.eHP<=0){ endQuiz(true); return; }
-    if (quiz.pHP<=0){ endQuiz(false); return; }
-    qNext.style.display='inline-block';
-    qNext.textContent='Siguiente';
-    qNext.onclick = ()=>{ quiz.idx++; if (quiz.idx>=quiz.qs.length) quiz.idx=0; quiz.lock=false; qRes.textContent=''; renderQuestion(); };
-  }
-  function syncBars(){ pBar.style.width = (quiz?quiz.pHP:100)+'%'; eBar.style.width = (quiz?quiz.eHP:100)+'%'; }
-  function endQuiz(victory){
-    qNext.style.display='inline-block'; qNext.textContent='Cerrar';
-    qNext.onclick = ()=>{ olQuiz.style.display='none'; quiz=null; syncUI(); };
-    if (victory){
-      if (quiz.kind==='boss'){
-        qRes.innerHTML='🏆 ¡Derrotaste al jefe final!';
-        state.bossDefeated=true;
-      } else {
-        qRes.innerHTML='🏆 ¡Victoria! Recibes <b>botín</b> y curas 20 HP.';
-        heal(20); rewardItem();
-        state.enemy.alive=true; state.enemy.hp=state.enemy.maxhp;
-      }
-    } else {
-      qRes.textContent='😵 Derrota. Recuperas fuerzas con el tiempo.';
-      state.player.hp = Math.max(20, state.player.hp-10);
-    }
-    persist();
-  }
-  function rewardItem(){
-    const pool=['leather','chain','sage'];
-    const id=pool[Math.floor(Math.random()*pool.length)];
-    if (!state.player.inventory.includes(id)){
-      state.player.inventory.push(id);
-      info(`Obtuviste ${ARMORS.find(a=>a.id===id).name}. Abre Inventario (I).`);
-    } else {
-      addScore(120); info('Objeto repetido convertido en puntos (+120).');
-    }
-  }
-
-  // ---------- XP/Nivel/Puntuación ----------
-  function xpMax(){ return 100 + (state.player.level-1)*50; }
-  function gainXP(n){
-    state.player.xp += n;
-    while (state.player.xp >= xpMax()){
-      state.player.xp -= xpMax();
-      state.player.level++;
-      state.player.baseCR += 1; state.player.baseDEF += 1; state.player.maxhp += 5;
-      state.player.hp = Math.min(statMaxHP(), state.player.hp+12);
-      info(`¡Subiste a nivel ${state.player.level}! +1 DEF, +1 CREAT, +5 HP máx.`);
-      beep(1040,.18);
-    }
-    syncUI(); persist();
-  }
-  function addScore(n){ state.player.score += n; syncUI(); persist(); }
-  function heal(n){ state.player.hp = clamp(state.player.hp + n, 0, statMaxHP()); syncUI(); persist(); }
-
-  // ---------- UI ----------
-  const uiLevel=document.getElementById('uiLevel');
-  const uiXP=document.getElementById('uiXP');
-  const uiXPMax=document.getElementById('uiXPMax');
-  const uiHP=document.getElementById('uiHP');
-  const uiDEF=document.getElementById('uiDEF');
-  const uiCR=document.getElementById('uiCR');
-  const uiScore=document.getElementById('uiScore');
-  const uiKeys=document.getElementById('uiKeys');
-  function syncUI(){
-    uiLevel.textContent = state.player.level;
-    uiXP.textContent = state.player.xp;
-    uiXPMax.textContent = xpMax();
-    uiHP.style.width = (state.player.hp / statMaxHP() * 100) + '%';
-    uiDEF.textContent = statDEF();
-    uiCR.textContent = statCR();
-    uiScore.textContent = state.player.score;
-    uiKeys.textContent = state.player.keys;
-  }
-  updateMuteBtn(); updateFlashBtn(); syncUI();
-
-  // ---------- Render ----------
-  function toXY(x,y){ return [Math.floor(x*TILE), Math.floor(y*TILE)]; }
-  function drawLabel(g, x,y, text){
-    const [px,py]=toXY(x-0.5,y-0.6); g.save();
-    g.font='12px system-ui'; const w=g.measureText(text).width+10;
-    g.fillStyle='rgba(0,0,0,.12)'; g.fillRect(px-4,py-18,w,16);
-    g.fillStyle='#0d1b3d'; g.fillText(text, px, py-6); g.restore();
-  }
-  function drawPlayer(g, dt){
-    const p=state.player; const [px,py]=toXY(p.x-0.5, p.y-0.9);
-    // sombra suave clara
-    g.fillStyle='rgba(0,0,0,.06)'; g.beginPath(); g.ellipse(px+16,py+44,12,6,0,0,Math.PI*2); g.fill();
-    // cuerpo
-    g.fillStyle='#2f72ff'; g.fillRect(px+10, py+18, 12, 16);
-    g.fillStyle='#eaf2ff'; g.fillRect(px+12, py+20, 8, 8);
-    // cabeza
-    g.fillStyle='#ffd6a3'; g.fillRect(px+10, py+8, 12, 10);
-    g.fillStyle='#0a0f2a'; g.fillRect(px+13, py+12, 2, 2); g.fillRect(px+17, py+12, 2, 2);
-    // pies
-    g.fillStyle='#2f3d5d'; g.fillRect(px+8, py+34, 7, 6); g.fillRect(px+17, py+34, 7, 6);
-    // arma
-    if (swingTimer>0){ swingTimer-=dt; g.fillStyle='#ffc86e'; g.fillRect(px+22, py+20, 10, 4); }
-  }
-  function drawFriend(g){
-    const f=state.friend; const [x,y]=toXY(f.x-0.5, f.y-0.9);
-    g.fillStyle='rgba(0,0,0,.06)'; g.beginPath(); g.ellipse(x+16,y+44,12,6,0,0,Math.PI*2); g.fill();
-    g.fillStyle='#3ec7ff'; g.fillRect(x+10,y+18,12,16);
-    g.fillStyle='#ffffff'; g.fillRect(x+12,y+20,8,8);
-    g.fillStyle='#ffd6a3'; g.fillRect(x+10,y+8,12,10);
-    g.fillStyle='#0a0f2a'; g.fillRect(x+13,y+12,2,2); g.fillRect(x+17,y+12,2,2);
-    drawLabel(g, f.x, f.y-0.9, 'Amigo (E)');
-  }
-  function drawEnemy(g, dt){
-    const e=state.enemy;
-    if (!e.alive){ drawLabel(g, e.x, e.y-1, 'Enemigo derrotado'); return; }
-    e.x += Math.sin(performance.now()/1000)*0.003;
-    const [x,y]=toXY(e.x-0.5, e.y-0.9);
-    g.fillStyle='rgba(0,0,0,.08)'; g.beginPath(); g.ellipse(x+16,y+44,12,6,0,0,Math.PI*2); g.fill();
-    g.fillStyle='#ff6b7b'; g.fillRect(x+10,y+18,12,16);
-    g.fillStyle='#ffe7ec'; g.fillRect(x+12,y+20,8,8);
-    g.fillStyle='#ffd6a3'; g.fillRect(x+10,y+8,12,10);
-    g.fillStyle='#0a0f2a'; g.fillRect(x+13, y+12,2,2); g.fillRect(x+17, y+12,2,2);
-    drawLabel(g, e.x, e.y-1, `Enemigo (E) HP:${e.hp}`);
-  }
-
-  // Suelo y paredes del laberinto
-  function drawMap(g){
-    // Suelo
-    for(let y=0;y<ROWS;y++){
-      for(let x=0;x<COLS;x++){
-        const [px,py]=toXY(x,y);
-        if (MAP[y][x]==='#'){
-          // Pared con ligero relieve
-          g.fillStyle=getCSS('--wallFace'); g.fillRect(px,py,TILE,TILE);
-          g.fillStyle=getCSS('--wallTop'); g.fillRect(px,py,TILE,4);
-          g.fillStyle=getCSS('--wallEdge'); g.fillRect(px,py,4,TILE);
-        } else {
-          const v=(x*13 + y*17) % 3;
-          g.fillStyle = v===0 ? getCSS('--stone1') : (v===1 ? getCSS('--stone2') : getCSS('--stone3'));
-          g.fillRect(px,py,TILE,TILE);
-          if(((x+y)&1)===0){
-            g.strokeStyle=getCSS('--stoneCrack'); g.lineWidth=1;
-            g.beginPath(); g.moveTo(px+4,py+TILE-3); g.lineTo(px+TILE-6,py+5); g.stroke();
-          }
+/* =========================
+   AI Murciélagos
+========================= */
+function updateBats(){
+  if(Game.state!==STATE.PLAYING) return;
+  const t = performance.now();
+  for(const b of Game.bats){
+    if(!b.alive) continue;
+    if(!b.nextStep || t>=b.nextStep){
+      const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+      shuffle(dirs);
+      for(const [dx,dy] of dirs){
+        const nx=b.x+dx, ny=b.y+dy;
+        if(nx>=b.room.x1 && nx<=b.room.x2 && ny>=b.room.y1 && ny<=b.room.y2 && Game.grid[ny][nx]!==WALL){
+          b.x=nx; b.y=ny; break;
         }
       }
+      const interval = (BAT_STEP_MIN + Math.random()*(BAT_STEP_MAX-BAT_STEP_MIN))*1000;
+      b.nextStep = t + interval;
     }
   }
+  // Colisión si pisan al jugador
+  if(now()>Game.safeUntil){
+    const hit = Game.bats.find(b=>b.alive && b.x===Game.player.x && b.y===Game.player.y);
+    if(hit){ hit.alive=false; launchQuiz(7); }
+  }
+}
 
-  // Efectos de brillo (bloom del resplandor)
-  function drawLighting(g){
-    if (flashTimer>0){
-      const k = Math.min(1, flashTimer/FLASH_DURATION);
-      const [fx,fy]=toXY(state.player.x, state.player.y);
-      g.save();
-      g.globalCompositeOperation='lighter';
-      const r = 320 + 280*k;
-      const grad=g.createRadialGradient(fx,fy,0,fx,fy,r);
-      grad.addColorStop(0,`rgba(255,255,220,${0.55*k})`);
-      grad.addColorStop(1,'rgba(255,255,220,0)');
-      g.fillStyle=grad; g.beginPath(); g.arc(fx,fy,r,0,Math.PI*2); g.fill();
-      g.restore();
-    }
+/* =========================
+   HUD
+========================= */
+const heartsDiv = document.getElementById('hearts');
+const timerDiv = document.getElementById('timer');
+const torchFill = document.getElementById('torchFill');
+const torchPct = document.getElementById('torchPct');
+const statusBubble = document.getElementById('statusBubble');
+
+function setStatus(msg){ statusBubble.textContent = msg; setTimeout(()=>{ if(statusBubble.textContent===msg) statusBubble.textContent=''; }, 3000); }
+
+function updateHUD(){
+  heartsDiv.innerHTML = '';
+  for(let i=0;i<MAX_HEARTS;i++){
+    const d=document.createElement('div');
+    d.className = 'heart'+(i<Game.player.hearts?'':' empty');
+    heartsDiv.appendChild(d);
+  }
+  timerDiv.textContent = '⏳ '+fmtTime(Game.timeLeft);
+  const t=now();
+  const pct = clamp( (TORCH_CD - (Game.torchReadyAt - t)) / TORCH_CD, 0, 1 );
+  torchFill.style.width = (pct*100).toFixed(0)+'%';
+  torchPct.textContent = (pct*100).toFixed(0)+'%';
+}
+
+/* =========================
+   Preguntas (STEM)
+========================= */
+const quizModal = document.getElementById('quizModal');
+const qText = document.getElementById('qText');
+const qMeta = document.getElementById('qMeta');
+const qButtons = Array.from(document.querySelectorAll('.optBtn'));
+const qProgress = document.getElementById('qProgress');
+const qCount = document.getElementById('quizCount');
+
+let quizQueue = [];
+let quizIdx = 0;
+
+function pickQuestion(){ return QUESTION_BANK[randInt(0, QUESTION_BANK.length-1)]; }
+
+function launchQuiz(n){
+  Game.state = STATE.ASKING;
+  quizQueue = []; quizIdx = 0;
+  for(let i=0;i<n;i++) quizQueue.push(pickQuestion());
+  qProgress.innerHTML=''; for(let i=0;i<n;i++){ const seg=document.createElement('div'); seg.className='seg'; qProgress.appendChild(seg); }
+  qCount.textContent = `Pregunta 1 de ${n}`;
+  showQuestion();
+  showModal(true);
+}
+
+function showModal(on){ quizModal.style.display = on?'flex':'none'; }
+
+function showQuestion(){
+  const q = quizQueue[quizIdx];
+  qText.textContent = q.text;
+  qMeta.textContent = `Categoría: ${q.cat}`;
+  qButtons.forEach((btn,i)=>{ btn.querySelector('.optTxt').textContent = q.opts[i]; });
+}
+
+qButtons.forEach(btn=> btn.addEventListener('click', ()=> handleAnswer(Number(btn.dataset.idx)) ));
+document.addEventListener('keydown', (e)=>{
+  if(Game.state===STATE.ASKING && ['Digit1','Digit2','Digit3','Digit4'].includes(e.code)){
+    e.preventDefault(); handleAnswer(Number(e.code.replace('Digit',''))-1);
+  }
+});
+
+function startDeathFade(stateType){ Game.state = stateType; Game.fadeAlpha = 0; }
+
+function handleAnswer(idx){
+  const q = quizQueue[quizIdx];
+  const ok = (idx===q.correct);
+  const seg = qProgress.children[quizIdx];
+  seg.classList.add(ok?'on':'bad');
+
+  if(ok){ AudioSys.beep('ok'); Game.qStats.ok++; }
+  else {
+    AudioSys.beep('bad');
+    Game.player.hearts = Math.max(0, Game.player.hearts-1);
+    Game.qStats.bad++;
+    if(Game.player.hearts===0){ showModal(false); startDeathFade(STATE.DEFEAT_HP); return; }
+    updateHUD();
   }
 
-  // ---------- Bucle principal ----------
-  let last=performance.now();
-  function frame(ts){
-    const dt = Math.min((ts - last)/1000, 0.05);
-    last = ts;
+  Game.qStats.total++;
+  Game.qStats.byCat[q.cat] ??= {total:0, ok:0, bad:0};
+  Game.qStats.byCat[q.cat].total++; if(ok) Game.qStats.byCat[q.cat].ok++; else Game.qStats.byCat[q.cat].bad++;
 
-    encounterCooldown = Math.max(0, encounterCooldown - dt);
-    if (flashTimer>0) flashTimer = Math.max(0, flashTimer - dt);
-    if (flashCooldown>0) flashCooldown = Math.max(0, flashCooldown - dt);
-    if (repelTimer>0) repelTimer = Math.max(0, repelTimer - dt);
-    updateFlashBtn();
+  quizIdx++;
+  if(quizIdx>=quizQueue.length){ showModal(false); Game.state=STATE.PLAYING; }
+  else { qCount.textContent = `Pregunta ${quizIdx+1} de ${quizQueue.length}`; showQuestion(); }
+}
 
-    stepPlayer(dt);
-    stepBats(dt);
+/* =========================
+   Victoria / Resultados
+========================= */
+const victory = document.getElementById('victory');
+const btnReiniciar = document.getElementById('btnReiniciar');
+btnReiniciar.addEventListener('click', ()=>{ victory.style.display='none'; resetGame(); });
 
-    // Render en buffer para evitar parpadeo
-    drawMap(bx);
-    drawKeys(bx);
-    drawDoor(bx);
-    for (const b of BATS) drawBat(bx, b);
-    drawFriend(bx);
-    drawEnemy(bx, dt);
-    drawPlayer(bx, dt);
-    drawLighting(bx);
-
-    // Blit
-    ctx.drawImage(back, 0, 0);
-    requestAnimationFrame(frame);
+function showVictory(){
+  const v = document.getElementById('victStats');
+  const total = Game.qStats.total, ok = Game.qStats.ok, bad = Game.qStats.bad;
+  const acc = total? Math.round(100*ok/total):0;
+  v.innerHTML = `<p><strong>Tiempo restante:</strong> ${fmtTime(Game.timeLeft)} • <strong>HP:</strong> ${Game.player.hearts}/${MAX_HEARTS}</p>
+                 <p><strong>Preguntas:</strong> ${total} &nbsp;|&nbsp; <strong>Correctas:</strong> ${ok} &nbsp;|&nbsp; <strong>Incorrectas:</strong> ${bad} &nbsp;|&nbsp; <strong>Acierto:</strong> ${acc}%</p>`;
+  const tbody = document.querySelector('#catTable tbody');
+  tbody.innerHTML='';
+  for(const [cat, s] of Object.entries(Game.qStats.byCat)){
+    const a = s.total? Math.round(100*s.ok/s.total):0;
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${cat}</td><td>${s.total}</td><td>${s.ok}</td><td>${s.bad||0}</td><td>${a}%</td>`;
+    tbody.appendChild(tr);
   }
-  requestAnimationFrame(frame);
+  victory.style.display='flex';
+}
+function hideVictory(){ victory.style.display='none'; }
 
-  // ---------- Helpers ----------
-  function pick(arr, n){
-    const copy=arr.slice(); const out=[];
-    while(out.length<n && copy.length){ out.push(copy.splice(Math.floor(Math.random()*copy.length),1)[0]); }
-    return out;
+/* =========================
+   Bucle
+========================= */
+let lastTime = performance.now()/1000;
+
+function gameLoop(){
+  requestAnimationFrame(gameLoop);
+  const t=now();
+  const dt = t-lastTime;
+  lastTime=t;
+
+  if(Game.state===STATE.PLAYING){
+    Game.timeLeft -= dt;
+    if(Game.timeLeft<=0){ startDeathFade(STATE.DEFEAT_T); }
+    else { updateInput(); updateBats(); }
+  } else if(Game.state===STATE.DEFEAT_HP || Game.state===STATE.DEFEAT_T){
+    Game.fadeAlpha = Math.min(1, Game.fadeAlpha + dt/1.0);
+    if(Game.fadeAlpha>=1){ resetGame(); return; }
   }
 
-  // ---------- API pública ----------
-  window.addQuestion = function(obj){
-    if (obj && typeof obj.q==='string' && Array.isArray(obj.a) && obj.a.length===4 && Number.isInteger(obj.i)){
-      obj.cat = obj.cat||'Extra'; obj.diff=obj.diff||'baja'; obj.tip=obj.tip||'';
-      QUESTIONS.push(obj); console.log('Pregunta añadida', obj);
-    } else {
-      console.warn('Pregunta inválida', obj);
-    }
-  };
-  window.resetProgress = function(){ localStorage.removeItem('rpg_edu_lab'); location.reload(); };
+  updateHUD();
+  Camera.updateTargets();
+  Camera.step(dt);
+  drawScene();
+}
 
-  // ---------- Accesibilidad ----------
-  cv.setAttribute('aria-describedby','cvHelp');
-  const help = document.createElement('div'); help.id='cvHelp'; help.className='sr';
-  help.textContent='Muévete con WASD o flechas, interactúa con E, ataca con Espacio, abre inventario con I. En preguntas usa 1 a 4. Resplandor con F o botón.';
-  document.body.appendChild(help);
-})();
+resetGame();
+resizeCanvas();
+gameLoop();
+
+window.addEventListener('load', ()=>document.getElementById('game').focus());
+document.getElementById('canvasWrap').addEventListener('click', ()=>document.getElementById('game').focus());
 </script>
-
-<!--
-=========================================================
-README incrustado (cómo usar/editar)
-=========================================================
-1) Jugar
-   - Guarda este archivo como index.html y ábrelo con doble clic (offline).
-   - Mueve: WASD/Flechas · Interactúa: E · Ataca: Espacio · Inventario: I · Responder: 1–4 · Resplandor: F.
-   - Encuentros: 25% por cada baldosa recorrida. El resplandor ahuyenta al enemigo actual y bloquea encuentros 3 s.
-   - Laberinto con paredes y colisiones, murciélagos volando por el escenario.
-
-2) Personalizar
-   - Preguntas: edita el arreglo QUESTIONS (cada elemento: q, a[4], i, tip, cat, diff).
-   - Añadir en vivo: window.addQuestion({ q:'¿?', a:['A','B','C','D'], i:0, tip:'...', cat:'Tema', diff:'baja' })
-   - Armaduras en ARMORS (hp/def/cr). Cambia rondas: QUIZ_ROUNDS.
-   - Encuentros: ENCOUNTER_RATE=0.25, ENCOUNTER_STEP, encounterCooldown.
-   - Resplandor: FLASH_DURATION, FLASH_COOLDOWN, REPEL_DURATION.
-   - Murciélagos: BAT_COUNT y parámetros en spawnBat/stepBats/drawBat.
-
-3) Publicar
-   - Sube a GitHub Pages o donde quieras. Sin dependencias ni llamadas de red.
-
-4) Persistencia
-   - Progreso con localStorage clave "rpg_edu_lab". Para borrar: window.resetProgress().
--->
+</body>
 </html>
