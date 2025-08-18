@@ -2,47 +2,61 @@
 <html lang="es">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RPG Educativo: Llave, Puerta y Murciélagos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>RPG Educativo — Llave, Puerta y Murciélagos (STEM)</title>
 <style>
   :root{
     --hud-h: 72px;
     --accent: #e1b12c;
-    --danger: #e84118;
+    --danger: #ff2d2d;
     --ok: #2ecc71;
     --ink: #111;
     --ink-2: #333;
   }
   *{box-sizing:border-box}
   html, body {
-    margin:0; padding:0; background:#ffffff; color:var(--ink);
+    margin:0; padding:0; color:var(--ink);
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     height:100%;
+    background:#ffffff;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+    touch-action: manipulation;
   }
+  body{ min-height:100dvh; }
   #hud{
-    position:fixed; top:0; left:0; right:0; height:var(--hud-h); background:rgba(255,255,255,0.95);
-    display:flex; align-items:center; gap:18px; padding:10px 16px; border-bottom: 1px solid #eee; z-index:10;
-    backdrop-filter: blur(4px);
+    position:fixed; top:0; left:0; right:0; height:var(--hud-h);
+    background:rgba(255,255,255,0.95);
+    display:flex; align-items:center; gap:12px; padding:10px 12px;
+    border-bottom: 1px solid #eee; z-index:10; backdrop-filter: blur(4px);
   }
   #hud .hearts{display:flex; align-items:center; gap:6px; font-size:14px}
-  .heart{width:20px; height:20px; border-radius:4px; background:var(--danger); box-shadow: inset 0 -2px 0 rgba(0,0,0,.08);}
-  .heart.empty{background:#fff; border:2px solid var(--danger)}
+  .heart{width:20px; height:20px; border-radius:4px; background:#e84118; box-shadow: inset 0 -2px 0 rgba(0,0,0,.08);}
+  .heart.empty{background:#fff; border:2px solid #e84118}
   #timer{font-weight:700; font-variant-numeric: tabular-nums; letter-spacing:1px; padding:6px 10px; background:#fff;
-    border:1px solid #eee; border-radius:8px; box-shadow:0 1px 0 #eee;}
-  #torchBox{display:flex; align-items:center; gap:10px; width:min(420px, 40vw);}
+    border:1px solid #eee; border-radius:8px; box-shadow:0 1px 0 #eee; min-width:92px; text-align:center;}
+  #torchBox{display:flex; align-items:center; gap:10px; width:min(420px, 48vw);}
   #torchBar{position:relative; flex:1; height:16px; border-radius:999px; background:#fafafa; border:1px solid #eee; overflow:hidden;}
   #torchFill{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg, #ffd56b, #f39c12);}
-  #torchPct{width:54px; text-align:right; font-variant-numeric: tabular-nums; color:var(--ink-2);}
+  #torchPct{width:70px; text-align:right; font-variant-numeric: tabular-nums; color:var(--ink-2);}
   #hintTorch{font-size:12px; color:#666}
   #audioCtl{margin-left:auto; display:flex; align-items:center; gap:8px; color:#555; font-size:12px}
   #audioCtl input[type="range"]{width:110px}
+  .btn{ padding:8px 12px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:600; }
+  .btn.primary{ background: var(--accent); border-color:#ca9e28; color:#111 }
+  #btnOptions{margin-left:4px}
 
-  #canvasWrap{ position:fixed; left:0; right:0; top:var(--hud-h); bottom:0; overflow:hidden; background:#fff;}
-  canvas{ image-rendering: pixelated; background: #f6f8fb; outline:none; display:block; margin:0 auto; }
+  #canvasWrap{
+    position:fixed; left:0; right:0; top:var(--hud-h);
+    bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+    overflow:hidden; background:#fff;
+  }
+  canvas{ image-rendering: pixelated; background: #f6f8fb; outline:none; display:block; margin:0 auto; width:100%; height:100%; }
 
   /* Modal Preguntas */
   #quizModal{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:20;
+    padding:12px;
   }
   #quizCard{
     width:min(760px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
@@ -50,7 +64,7 @@
   }
   #quizHdr{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
   #quizHdr h3{margin:0; font-size:18px}
-  #qProgress{display:flex; gap:6px}
+  #qProgress{display:flex; gap:6px; flex-wrap:wrap}
   .seg{width:18px; height:8px; border-radius:99px; background:#eee}
   .seg.on{background:var(--ok)}
   .seg.bad{background:var(--danger)}
@@ -68,6 +82,7 @@
   /* Panel Victoria */
   #victory{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:25;
+    padding:12px;
   }
   #victoryCard{
     width:min(740px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
@@ -76,16 +91,52 @@
   table{ border-collapse: collapse; width:100%; font-size:14px; }
   th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; }
   th{ background:#fafafa }
-  .btn{ padding:10px 14px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:600; }
-  .btn.primary{ background: var(--accent); border-color:#ca9e28; color:#111 }
   #statusBubble{ font-size:12px; color:#666; }
+
+  /* Modal Opciones */
+  #optModal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:30; padding:12px;}
+  #optCard{ width:min(560px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+            padding:18px; border:1px solid #eee; }
+  #optCard h3{ margin:6px 0 12px; }
+  .optRow{ display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; margin:8px 0; }
+  .optRow input, .optRow select{ padding:8px 10px; border:1px solid #ddd; border-radius:10px; width:160px; }
+
+  /* Controles táctiles */
+  #touchControls{ position:fixed; left:0; right:0; bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+                  display:none; justify-content:space-between; align-items:flex-end; padding:8px 12px; z-index:12; pointer-events:none; }
+  #dpad{ display:grid; grid-template-rows: auto auto auto; grid-template-columns: auto auto auto; gap:10px; pointer-events:auto; }
+  #dpad .pad{ width:56px; height:56px; border-radius:12px; border:1px solid #ddd; background:rgba(255,255,255,.9); box-shadow:0 2px 6px rgba(0,0,0,.1); font-size:20px; }
+  #btnTorch{ pointer-events:auto; width:72px; height:72px; border-radius:16px; border:1px solid #ddd; background:rgba(255,255,255,.95); box-shadow:0 2px 6px rgba(0,0,0,.12); font-size:26px; }
+  .pad:active{ transform: scale(0.98); }
+  @media (pointer:coarse) {
+    #touchControls{ display:flex; }
+    #torchBox{ width:min(360px, 54vw); }
+    #hud{ gap:8px; }
+  }
+
+  /* Pantalla inicial (nombre) */
+  #startModal{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,.35); z-index:50; padding:12px;
+  }
+  #startCard{
+    width:min(560px, 92vw); background:#fff; border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    padding:18px; border:1px solid #eee;
+  }
+  #startCard h2{ margin:4px 0 10px; }
+  #startCard .row{ display:grid; grid-template-columns: 1fr; gap:10px; margin:10px 0; }
+  #playerName{ padding:10px 12px; border:1px solid #ddd; border-radius:12px; font-size:16px; width:100%; }
+
+  /* Créditos */
+  #credits{
+    position:fixed; right:8px; bottom:6px; font-size:11px; color:#777; opacity:.75; z-index:6; pointer-events:none;
+  }
 </style>
 </head>
 <body>
   <div id="hud" aria-label="Barra superior HUD">
     <div class="hearts" id="hearts"></div>
     <div id="timer" aria-live="polite">⏳ 03:00</div>
-    <div id="torchBox" title="Antorcha (F): 5 s seguro, 60 s recarga">
+    <div id="torchBox" title="Antorcha (F): 7 s seguro, 60 s recarga">
       <span>🔥</span>
       <div id="torchBar" aria-label="Recarga antorcha"><div id="torchFill"></div></div>
       <div id="torchPct">0%</div>
@@ -95,11 +146,41 @@
     <div id="audioCtl">
       <label><input type="checkbox" id="mute"> Silencio</label>
       <label>Volumen <input type="range" id="volume" min="0" max="1" step="0.01" value="0.15"></label>
+      <button id="btnOptions" class="btn">⚙️ Opciones</button>
     </div>
   </div>
 
   <div id="canvasWrap">
     <canvas id="game" width="1024" height="640" tabindex="0"></canvas>
+  </div>
+
+  <!-- Controles táctiles -->
+  <div id="touchControls">
+    <div id="dpad" aria-label="Direcciones">
+      <div></div>
+      <button class="pad" id="padUp">▲</button>
+      <div></div>
+      <button class="pad" id="padLeft">◀</button>
+      <div></div>
+      <button class="pad" id="padRight">▶</button>
+      <div></div>
+      <button class="pad" id="padDown">▼</button>
+      <div></div>
+    </div>
+    <button class="pad" id="btnTorch" title="Antorcha">🔥</button>
+  </div>
+
+  <!-- Pantalla inicial (nombre del jugador) -->
+  <div id="startModal" role="dialog" aria-modal="true">
+    <div id="startCard">
+      <h2>¡Bienvenido/a!</h2>
+      <p style="margin:0; color:#555;">Escribe tu nombre completo para comenzar.</p>
+      <div class="row">
+        <input id="playerName" type="text" autocomplete="name" placeholder="Nombre completo del jugador">
+        <button id="btnStart" class="btn primary">Iniciar juego</button>
+      </div>
+      <div style="font-size:12px; color:#777;">Tip: Usa las flechas o WASD para moverte y F para la antorcha.</div>
+    </div>
   </div>
 
   <!-- Modal Preguntas -->
@@ -118,7 +199,7 @@
         <button class="optBtn" data-idx="3"><div class="optKey">4</div><div class="optTxt"></div></button>
       </div>
       <div id="quizFooter">
-        <div>Usa 1–4 o clic para responder. <strong>Incorrecta = −1 ❤️</strong></div>
+        <div>Usa 1–4 o toca para responder. <strong>Incorrecta = −1 ❤️</strong></div>
         <div id="quizCount"></div>
       </div>
     </div>
@@ -140,27 +221,76 @@
     </div>
   </div>
 
+  <!-- Modal Opciones -->
+  <div id="optModal">
+    <div id="optCard">
+      <h3>⚙️ Opciones rápidas</h3>
+      <div class="optRow">
+        <label for="optTime">Minutos de partida (⏳):</label>
+        <input id="optTime" type="number" min="1" max="60" step="1" value="3">
+      </div>
+      <div class="optRow">
+        <label for="optBats">Murciélagos por sala:</label>
+        <select id="optBats">
+          <option>1</option><option selected>3</option><option>2</option><option>4</option>
+        </select>
+      </div>
+      <div class="optRow">
+        <label for="optTorchCd">Antorcha: enfriamiento (s)</label>
+        <input id="optTorchCd" type="number" min="5" max="9999" step="1" value="60">
+      </div>
+      <div class="optRow">
+        <label for="optTorchSafe">Antorcha: seguridad (s)</label>
+        <input id="optTorchSafe" type="number" min="1" max="60" step="1" value="7">
+      </div>
+      <div style="margin-top:14px; display:flex; gap:8px; justify-content:flex-end;">
+        <button id="optCancel" class="btn">Cancelar</button>
+        <button id="optApply" class="btn primary">Aplicar y reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Créditos (esquina) -->
+  <div id="credits">Desarrolladores: <strong>Aslin G &amp; IA</strong></div>
+
 <script>
 /* =========================
-   Constantes / Utilidades
+   Config editable por UI
+========================= */
+const DEFAULTS = { totalTimeSec: 3*60, torchCd: 60, torchSafe: 7, batsPerRoom: 3 };
+let CONFIG = {...DEFAULTS}; // actualizado desde el modal
+
+/* =========================
+   Constantes base
 ========================= */
 const TILE = 32;
 const ROOM_COLS = 6, ROOM_ROWS = 4;
 const ROOM_W = 9, ROOM_H = 7; // interior caminable por sala
-const WALL = 1, FLOOR = 0, DOOR = 2, EXIT = 3, KEY = 4;
-const MAX_HEARTS = 7;
-const TOTAL_TIME = 3*60;
-const TORCH_CD = 60, TORCH_SAFE = 5;
-const BAT_STEP_MIN = 0.20, BAT_STEP_MAX = 0.30;
-const BATS_PER_ROOM = 3; // << puedes cambiarlo
-const BAT_WING_PERIOD = 350; // ms
-const STATE = { PLAYING:'playing', ASKING:'asking', VICTORY:'victory', DEFEAT_T:'defeat-time', DEFEAT_HP:'defeat-hp' };
+const WALL = 1, FLOOR = 0, DOOR = 2, EXIT = 3, KEY = 4, SHARD = 5;
 
-// Colores explícitos (no var() para el canvas)
+const MAX_HEARTS = 7;
+const BAT_STEP_MIN = 0.20, BAT_STEP_MAX = 0.30;
+const BAT_WING_PERIOD = 350;       // ms
+const DEATH_HOLD = 1.6;            // ⏱️ pausa tras el fundido
+
+// Mecánicas nuevas (opcionales)
+const FOG_OF_WAR = true;                 // sombreado en salas no visitadas
+const SHARDS_PER_MAP = 2;                // 0..3: “relojes” que añaden tiempo
+const TIME_SHARD_SECONDS = 30;           // tiempo que añade cada shard
+const PERFECT_BONUS_HEART = true;        // +1 ❤️ si respondes 7/7
+
+// >>> RED BATS: Configuración
+const RED_BATS_REQUIRED = 3;             // cantidad requerida para ganar
+
+// Colores fijos (canvas no soporta var() en fillStyle)
 const COLOR_FLOOR_A = '#eef1f6';
 const COLOR_FLOOR_B = '#f6f8fb';
 const COLOR_WALL    = '#e8ebf0';
 
+// Estados
+const STATE = { INTRO:'intro', PLAYING:'playing', ASKING:'asking', VICTORY:'victory', DEFEAT_T:'defeat-time', DEFEAT_HP:'defeat-hp' };
+
+// Util
 function randInt(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function now(){ return performance.now()/1000; }
@@ -168,8 +298,7 @@ function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.rand
 function fmtTime(sec){ sec=Math.max(0,Math.floor(sec)); const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return m+":"+s; }
 
 /* =========================
-   Banco de preguntas (STEM)
-   cat ∈ {Ciencia, Tecnología, Ingeniería, Matemáticas}
+   Preguntas (STEM)
 ========================= */
 const QUESTION_BANK = [
   // Ciencia
@@ -177,19 +306,16 @@ const QUESTION_BANK = [
   {cat:"Ciencia", text:"El agua hierve a menor temperatura en lugares altos porque:", opts:["La presión atmosférica es menor","El oxígeno es mayor","El punto triple cambia","El pH del agua disminuye"], correct:0},
   {cat:"Ciencia", text:"La fotosíntesis convierte energía:", opts:["Química → lumínica","Lumínica → química","Térmica → química","Mecánica → eléctrica"], correct:1},
   {cat:"Ciencia", text:"Un aumento de la temperatura generalmente ______ la solubilidad de un sólido en un líquido.", opts:["disminuye","no cambia","aumenta","invierte"], correct:2},
-
   // Tecnología
   {cat:"Tecnología", text:"HTTPS añade al protocolo HTTP principalmente:", opts:["Compresión","Estado","Cifrado/TLS","Balanceo"], correct:2},
   {cat:"Tecnología", text:"Un algoritmo con complejidad O(n log n) es típico de:", opts:["Búsqueda lineal","Quicksort/Mergesort","Búsqueda binaria","Fuerza bruta de contraseñas"], correct:1},
   {cat:"Tecnología", text:"El almacenamiento no volátil significa que:", opts:["Pierde datos al apagarse","Requiere energía continua","Conserva datos sin energía","Solo existe en RAM"], correct:2},
   {cat:"Tecnología", text:"Un ‘commit’ en control de versiones sirve para:", opts:["Compilar el proyecto","Guardar un punto de cambio con mensaje","Crear un servidor","Instalar dependencias"], correct:1},
-
   // Ingeniería
   {cat:"Ingeniería", text:"La ley de Ohm se expresa como:", opts:["P=V·I","V=I·R","E=m·c²","F=m·a"], correct:1},
   {cat:"Ingeniería", text:"Para disminuir la resonancia de una estructura, usualmente se:", opts:["Aumenta amortiguamiento","Reduce rigidez","Aumenta la frecuencia natural hacia la excitación","Elimina masa"], correct:0},
-  {cat:"Ingeniería", text:"Un diagrama de fuerza cortante se usa en:", opts:["Circuits DC","Vigas y flexión","Termodinámica","Transmisión óptica"], correct:1},
+  {cat:"Ingeniería", text:"Un diagrama de fuerza cortante se usa en:", opts:["Circuitos DC","Vigas y flexión","Termodinámica","Transmisión óptica"], correct:1},
   {cat:"Ingeniería", text:"El factor de seguridad FS se define como:", opts:["Carga última / Carga de trabajo","Carga de trabajo / Carga última","Esfuerzo admisible / Esfuerzo real","Masa / Volumen"], correct:0},
-
   // Matemáticas
   {cat:"Matemáticas", text:"La derivada de f(x)=x² es:", opts:["2x","x","x³","2"], correct:0},
   {cat:"Matemáticas", text:"Si A es el 30% de B, entonces B es:", opts:["0.3·A","3.33·A","A/3.33","A/0.7"], correct:1},
@@ -235,10 +361,8 @@ const AudioSys = {
     function playChord(root=261.63){
       const freqs=[root, root*1.25, root*1.5, root*2];
       freqs.forEach((f,i)=>{
-        const o=ctx.createOscillator();
-        const g=ctx.createGain();
-        o.type='sine'; o.frequency.value=f;
-        g.gain.value=0.0001;
+        const o=ctx.createOscillator(); const g=ctx.createGain();
+        o.type='sine'; o.frequency.value=f; g.gain.value=0.0001;
         o.connect(g); g.connect(AudioSys.musicGain);
         const t=ctx.currentTime;
         o.start(t+i*0.03);
@@ -255,7 +379,7 @@ const AudioSys = {
 };
 
 /* =========================
-   Mapa y salas
+   Mapa / Salas / Objetos
 ========================= */
 function buildMap(){
   const totalW = ROOM_COLS*(ROOM_W+1)+1;
@@ -263,7 +387,7 @@ function buildMap(){
   const grid = Array.from({length: totalH}, ()=>Array(totalW).fill(WALL));
   const rooms=[];
 
-  // Interiores
+  // Interiores por sala
   for(let ry=0; ry<ROOM_ROWS; ry++){
     for(let rx=0; rx<ROOM_COLS; rx++){
       const x1 = rx*(ROOM_W+1)+1;
@@ -271,10 +395,10 @@ function buildMap(){
       for(let y=y1; y<y1+ROOM_H; y++)
         for(let x=x1; x<x1+ROOM_W; x++)
           grid[y][x]=FLOOR;
-      rooms.push({rx,ry, x1, y1, x2:x1+ROOM_W-1, y2:y1+ROOM_H-1});
+      rooms.push({rx,ry, x1, y1, x2:x1+ROOM_W-1, y2:y1+ROOM_H-1, visited:false});
     }
   }
-  // Aperturas (pasillos)
+  // Aperturas entre salas
   for(const r of rooms){
     if(r.rx<ROOM_COLS-1){
       const y = Math.floor((r.y1 + r.y2)/2);
@@ -292,7 +416,7 @@ function buildMap(){
 
   const startTile = { x: botRight.x2, y: botRight.y2 };
 
-  // Puerta y cámara de salida (fuera del muro derecho de la sala sup. derecha)
+  // Puerta y salida
   const doorY = Math.floor((topRight.y1 + topRight.y2)/2);
   const doorX = topRight.x2+1;
   for(let yy=doorY-1; yy<=doorY+1; yy++)
@@ -305,26 +429,38 @@ function buildMap(){
   // Llave
   const keyX = botLeft.x1, keyY = botLeft.y2; grid[keyY][keyX] = KEY;
 
+  // Shards (tiempo extra) — no bloquean
+  let placed=0, tries=0;
+  while(placed < SHARDS_PER_MAP && tries < 2000){
+    const r = rooms[randInt(0, rooms.length-1)];
+    const x = randInt(r.x1, r.x2);
+    const y = randInt(r.y1, r.y2);
+    const forbidden = grid[y][x]!==FLOOR || (x===startTile.x && y===startTile.y) ||
+                      (x===keyX && y===keyY) || (x===doorX && y===doorY) || (x===exitX && y===exitY);
+    if(!forbidden){
+      grid[y][x] = SHARD; placed++;
+    }
+    tries++;
+  }
+
   return {grid, rooms, start:startTile, door:{x:doorX, y:doorY}, exit:{x:exitX, y:exitY}, key:{x:keyX,y:keyY}};
 }
 
-/* =========================
-   Spawn de murciélagos (N por sala)
-========================= */
 function spawnBats(rooms, objects, grid){
   const bats = [];
   for(const r of rooms){
     let placed = 0, tries = 0;
-    while(placed < BATS_PER_ROOM && tries < 2000){
+    while(placed < CONFIG.batsPerRoom && tries < 2000){
       const x = randInt(r.x1, r.x2);
       const y = randInt(r.y1, r.y2);
       const occupied = (objects.start.x===x && objects.start.y===y) ||
                        (objects.key.x===x && objects.key.y===y) ||
                        (objects.door.x===x && objects.door.y===y) ||
                        (objects.exit.x===x && objects.exit.y===y) ||
+                       grid[y][x]!==FLOOR ||
                        bats.some(b=>b.x===x && b.y===y);
-      if(grid[y][x]===FLOOR && !occupied){
-        bats.push({x,y,rx:r.rx,ry:r.ry, room:r, alive:true, nextStep:0});
+      if(!occupied){
+        bats.push({x,y,rx:r.rx,ry:r.ry, room:r, alive:true, nextStep:0, red:false});
         placed++;
       }
       tries++;
@@ -333,21 +469,50 @@ function spawnBats(rooms, objects, grid){
   return bats;
 }
 
+// >>> RED BATS: aparición global de 3 murciélagos rojos
+function spawnRedBats(rooms, objects, grid, normals, count=RED_BATS_REQUIRED){
+  const reds = [];
+  let tries = 0;
+  while(reds.length < count && tries < 8000){
+    const r = rooms[randInt(0, rooms.length-1)];
+    const x = randInt(r.x1, r.x2);
+    const y = randInt(r.y1, r.y2);
+    const occupied = (objects.start.x===x && objects.start.y===y) ||
+                     (objects.key.x===x && objects.key.y===y) ||
+                     (objects.door.x===x && objects.door.y===y) ||
+                     (objects.exit.x===x && objects.exit.y===y) ||
+                     grid[y][x]!==FLOOR ||
+                     normals.some(b=>b.x===x && b.y===y) ||
+                     reds.some(b=>b.x===x && b.y===y);
+    if(!occupied){
+      reds.push({x,y,rx:r.rx,ry:r.ry, room:r, alive:true, nextStep:0, red:true});
+    }
+    tries++;
+  }
+  return reds;
+}
+
 /* =========================
-   Estado + Cámara (suavizado)
+   Estado + Cámara
 ========================= */
 const Game = {
   grid:null, rooms:null, width:0, height:0,
   player:{x:0,y:0, hasKey:false, hearts:MAX_HEARTS, facing:{dx:-1,dy:0}},
+  playerName:'', // << nombre del jugador
   bats:[],
+  // >>> RED BATS: estado adicional
+  redBats:[],
+  redBatsRemaining: RED_BATS_REQUIRED,
+
   door:null, exit:null, key:null,
   state:STATE.PLAYING,
-  timeLeft:TOTAL_TIME,
+  timeLeft:DEFAULTS.totalTimeSec,
   safeUntil:0,
   torchReadyAt:0,
   qStats:{ total:0, ok:0, bad:0, byCat:{} },
   moving:false,
   fadeAlpha:0,
+  deathHoldUntil:null,
 };
 
 const Camera = {
@@ -360,7 +525,7 @@ const Camera = {
     this.ty = clamp(cy, halfH, Math.max(halfH, worldH - halfH));
   },
   step(dt){
-    const smoothing = 1 - Math.pow(0.001, dt); // lerp exponencial
+    const smoothing = 1 - Math.pow(0.001, dt); // lerp exponencial suave
     this.x += (this.tx - this.x) * smoothing;
     this.y += (this.ty - this.y) * smoothing;
   }
@@ -372,33 +537,55 @@ function resetGame(){
   Game.player.x=start.x; Game.player.y=start.y; Game.player.hasKey=false; Game.player.hearts=MAX_HEARTS; Game.player.facing={dx:-1,dy:0};
   Game.door=door; Game.exit=exit; Game.key=key;
   Game.bats = spawnBats(rooms, {start, door, exit, key}, grid);
-  Game.state=STATE.PLAYING; Game.timeLeft=TOTAL_TIME; Game.safeUntil=0; Game.torchReadyAt=0;
-  Game.qStats = { total:0, ok:0, bad:0, byCat:{} }; Game.moving=false; Game.fadeAlpha=0;
-  updateHUD(); hideVictory();
+  // >>> RED BATS: generar y contar
+  Game.redBats = spawnRedBats(rooms, {start, door, exit, key}, grid, Game.bats, RED_BATS_REQUIRED);
+  Game.redBatsRemaining = Game.redBats.length;
+
+  Game.state=STATE.PLAYING; Game.timeLeft=CONFIG.totalTimeSec; Game.safeUntil=0; Game.torchReadyAt=0;
+  Game.qStats = { total:0, ok:0, bad:0, byCat:{} }; Game.moving=false; Game.fadeAlpha=0; Game.deathHoldUntil=null;
+
+  // HUD inicial correcto
+  document.getElementById('timer').textContent = '⏳ '+fmtTime(Game.timeLeft);
+  document.getElementById('torchBox').title = `Antorcha (F): ${CONFIG.torchSafe} s seguro, ${CONFIG.torchCd} s recarga`;
+
+  // Cámara
   Camera.updateTargets(); Camera.x = Camera.tx; Camera.y = Camera.ty;
+
+  // Visitas
+  const r = currentRoomOf(Game.player.x, Game.player.y);
+  if(r) r.visited = true;
+
+  // Resultados
+  hideVictory();
+  updateHUD();
 }
 
 /* =========================
-   Canvas y render
+   Canvas / Render
 ========================= */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
 function resizeCanvas(){
   const hudH = document.getElementById('hud').offsetHeight || 72;
-  canvas.width  = Math.max(640, Math.floor(window.innerWidth));
-  canvas.height = Math.max(400, Math.floor(window.innerHeight - hudH));
+  const vpH = (window.visualViewport && window.visualViewport.height) ? Math.floor(window.visualViewport.height) : window.innerHeight;
+  const cssH = Math.max(360, vpH - hudH);
+  // Establece tamaño en CSS px; evitamos problemas con DPR para que no se corte
+  canvas.style.width = '100%';
+  canvas.style.height = cssH + 'px';
+  canvas.width = Math.floor(canvas.getBoundingClientRect().width);
+  canvas.height = cssH;
 }
 window.addEventListener('resize', ()=>{ resizeCanvas(); Camera.updateTargets(); });
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{ resizeCanvas(); Camera.updateTargets(); });
+}
 
 function worldToScreen(x,y){
   const px = Math.floor(x*TILE - (Camera.x - canvas.width/2));
   const py = Math.floor(y*TILE - (Camera.y - canvas.height/2));
   return {px,py};
 }
-
-function getFloorColor(x,y){ return ((x+y)%4===0) ? COLOR_FLOOR_A : COLOR_FLOOR_B; }
-function getWallColor(){ return COLOR_WALL; }
 
 function drawScene(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -414,25 +601,33 @@ function drawScene(){
     for(let x=Math.max(0,left); x<=Math.min(Game.width-1,right); x++){
       const t = Game.grid[y][x];
       const s = worldToScreen(x,y);
-      ctx.fillStyle = (t===WALL) ? getWallColor() : getFloorColor(x,y);
+      ctx.fillStyle = (t===WALL) ? '#e8ebf0' : (((x+y)%4===0)?'#eef1f6':'#f6f8fb');
       ctx.fillRect(s.px, s.py, TILE, TILE);
     }
   }
 
-  // Llave
+  // Objetos
   if(Game.grid[Game.key.y][Game.key.x]===KEY){ drawKey(Game.key.x, Game.key.y); }
-  // Puerta / Salida
   if(Game.grid[Game.door.y][Game.door.x]===DOOR){ drawDoor(Game.door.x, Game.door.y, false); }
   drawExit(Game.exit.x, Game.exit.y);
 
-  // Bats
+  // Shards visibles
+  for(let y=Math.max(0,top); y<=Math.min(Game.height-1,bottom); y++){
+    for(let x=Math.max(0,left); x<=Math.min(Game.width-1,right); x++){
+      if(Game.grid[y][x]===SHARD) drawShard(x,y);
+    }
+  }
+
+  // Murciélagos (normales y rojos)
   for(const b of Game.bats){ if(b.alive) drawBat(b); }
+  for(const b of Game.redBats){ if(b.alive) drawBat(b); }
+
   // Jugador
   drawPlayer();
 
-  // Overlay seguro por sala
+  // Seguro antorcha (overlay suave)
   if(now()<Game.safeUntil){
-    ctx.fillStyle = 'rgba(255, 243, 205, 0.22)';
+    ctx.fillStyle = 'rgba(255, 243, 205, 0.23)';
     const r = currentRoomOf(Game.player.x, Game.player.y);
     if(r){
       const s = worldToScreen(r.x1, r.y1);
@@ -440,10 +635,29 @@ function drawScene(){
     }
   }
 
-  // Fundido de muerte
+  // Fog of war
+  if(FOG_OF_WAR){
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for(const r of Game.rooms){
+      if(!r.visited){
+        const s = worldToScreen(r.x1, r.y1);
+        ctx.fillRect(s.px, s.py, (r.x2-r.x1+1)*TILE, (r.y2-r.y1+1)*TILE);
+      }
+    }
+  }
+
+  // Fundido al morir + MENSAJE EN ROJO
   if(Game.state===STATE.DEFEAT_HP || Game.state===STATE.DEFEAT_T){
     ctx.fillStyle = `rgba(0,0,0,${Game.fadeAlpha})`;
     ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 34px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial';
+    ctx.fillStyle = '#ff2d2d';
+    ctx.fillText('¡Has muerto! El juego ha terminado.', canvas.width/2, canvas.height/2);
+    ctx.restore();
   }
 }
 
@@ -458,7 +672,7 @@ function drawKey(tx,ty){
   ctx.fillStyle = '#f39c12'; ctx.fillRect(x+18, y+12, 4, 4);
 }
 function drawDoor(tx,ty,open){
-  const s=worldToScreen(tx,ty); const x=s.px, y=s.px? s.py : s.py; // segura
+  const s=worldToScreen(tx,ty); const x=s.px, y=s.py;
   ctx.fillStyle = open ? '#c7ecee' : '#d4a017';
   ctx.fillRect(x+2, y+2, TILE-4, TILE-4);
   if(!open){ ctx.fillStyle = '#8e5a0a'; ctx.fillRect(x+TILE/2-2, y+TILE/2-6, 4, 12); }
@@ -470,22 +684,30 @@ function drawExit(tx,ty){
   ctx.fillStyle = '#27ae60';
   ctx.fillRect(x+10, y+10, TILE-20, TILE-20);
 }
+function drawShard(tx,ty){ // reloj de arena +30s
+  const s=worldToScreen(tx,ty); const x=s.px, y=s.py;
+  ctx.fillStyle = '#dff9fb';
+  ctx.fillRect(x+10, y+8, 12, 16);
+  ctx.fillStyle = '#00a8ff';
+  ctx.beginPath(); // triángulo superior
+  ctx.moveTo(x+10,y+10); ctx.lineTo(x+22,y+10); ctx.lineTo(x+16,y+14); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); // triángulo inferior
+  ctx.moveTo(x+10,y+22); ctx.lineTo(x+22,y+22); ctx.lineTo(x+16,y+18); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#0984e3'; ctx.strokeRect(x+10, y+8, 12, 16);
+}
 function drawBat(b){
   const s=worldToScreen(b.x,b.y); const x=s.px, y=s.py;
   const t = performance.now();
   const phase = Math.sin((t%BAT_WING_PERIOD)/BAT_WING_PERIOD * Math.PI*2);
   const wing = 6 + Math.floor(4*phase);
-  ctx.fillStyle = "#2d3436";
+  // >>> RED BATS: color según tipo
+  ctx.fillStyle = b.red ? "#ff2d2d" : "#2d3436";
   ctx.fillRect(x+12, y+12, 8, 8); // cuerpo
   ctx.beginPath(); // ala izq
   ctx.moveTo(x+12, y+16); ctx.lineTo(x+4, y+16-wing); ctx.lineTo(x+4, y+16+wing); ctx.closePath(); ctx.fill();
   ctx.beginPath(); // ala der
   ctx.moveTo(x+20, y+16); ctx.lineTo(x+28, y+16-wing); ctx.lineTo(x+28, y+16+wing); ctx.closePath(); ctx.fill();
 }
-
-/* =========================
-   Personaje humanoide + ojos + paso
-========================= */
 function drawPlayer(){
   const s=worldToScreen(Game.player.x, Game.player.y); const x=s.px, y=s.py;
   const t = performance.now();
@@ -527,14 +749,18 @@ function drawPlayer(){
 }
 
 /* =========================
-   Entrada / movimiento
+   Entrada / Movimiento por tiles
 ========================= */
 const keys = new Set();
 let lastMoveTime=0;
 const MOVE_DELAY = 0.08;
 
 document.addEventListener('keydown', (e)=>{
-  if(Game.state===STATE.ASKING) return;
+  // ⬇️ FIX: no interceptar teclas cuando se escribe en inputs o cuando no estamos en PLAYING
+  const t = e.target;
+  const isEditable = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  if (isEditable || Game.state !== STATE.PLAYING) return;
+
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD','KeyF'].includes(e.code)) e.preventDefault();
   if(!AudioSys.ctx) AudioSys.ensure();
   keys.add(e.code);
@@ -575,6 +801,14 @@ function isKey(x,y){ return Game.grid[y][x]===KEY; }
 
 function currentRoomOf(x,y){ return Game.rooms.find(r=>x>=r.x1 && x<=r.x2 && y>=r.y1 && y<=r.y2); }
 
+// >>> RED BATS: helper para derrotar y contar
+function defeatRedBat(b){
+  if(!b.alive) return;
+  b.alive = false;
+  Game.redBatsRemaining = Math.max(0, Game.redBatsRemaining - 1);
+  setStatus(`Murciélago rojo derrotado (${RED_BATS_REQUIRED - Game.redBatsRemaining}/${RED_BATS_REQUIRED})`);
+}
+
 function tryMove(dx,dy){
   const nx = Game.player.x+dx;
   const ny = Game.player.y+dy;
@@ -594,6 +828,10 @@ function tryMove(dx,dy){
 
   Game.player.x=nx; Game.player.y=ny;
 
+  // Marcar sala visitada
+  const rVisited = currentRoomOf(nx,ny);
+  if(rVisited) rVisited.visited = true;
+
   // Recoger llave
   if(isKey(nx,ny)){
     Game.player.hasKey=true;
@@ -602,21 +840,35 @@ function tryMove(dx,dy){
     setStatus("Llave dorada obtenida.");
   }
 
-  // Salida: SOLO con llave
+  // Shard (+tiempo)
+  if(Game.grid[ny][nx]===SHARD){
+    Game.grid[ny][nx]=FLOOR;
+    Game.timeLeft += TIME_SHARD_SECONDS;
+    setStatus(`⏳ +${TIME_SHARD_SECONDS}s`);
+  }
+
+  // Salida: requiere llave + 3 rojos derrotados
   if(isExit(nx,ny)){
-    if(Game.player.hasKey){
+    if(Game.player.hasKey && Game.redBatsRemaining<=0){
       Game.state=STATE.VICTORY;
       showVictory();
       return;
-    } else {
+    } else if(!Game.player.hasKey){
       setStatus("Para salir, primero abre la puerta con la llave.");
+    } else {
+      // >>> RED BATS: mensaje “nubecita”
+      setStatus(`Aún debes vencer a ${Game.redBatsRemaining} murciélago(s) rojo(s).`);
     }
   }
 
-  // Colisión con murciélagos (si no hay 'seguro')
+  // Colisiones con murciélagos (si no hay 'seguro')
   if(now()>Game.safeUntil){
+    // Normales
     const bat = Game.bats.find(b=>b.alive && b.x===nx && b.y===ny);
-    if(bat){ bat.alive=false; launchQuiz(7); }
+    if(bat){ bat.alive=false; launchQuiz(7); Camera.updateTargets(); return; }
+    // Rojos
+    const rbat = Game.redBats.find(b=>b.alive && b.x===nx && b.y===ny);
+    if(rbat){ defeatRedBat(rbat); launchQuiz(7); Camera.updateTargets(); return; }
   }
 
   Camera.updateTargets(); // actualizar destino de cámara
@@ -628,21 +880,27 @@ function tryMove(dx,dy){
 function useTorch(){
   const t=now();
   if(t < Game.torchReadyAt) return;
-  Game.safeUntil = t + TORCH_SAFE;
-  Game.torchReadyAt = t + TORCH_CD;
+  Game.safeUntil = t + CONFIG.torchSafe;
+  Game.torchReadyAt = t + CONFIG.torchCd;
   const r = currentRoomOf(Game.player.x, Game.player.y);
-  if(r){ for(const b of Game.bats){ if(b.alive && b.rx===r.rx && b.ry===r.ry){ b.alive=false; } } }
-  setStatus("Sala despejada. Seguridad 5 s.");
+  if(r){
+    // limpia SOLO murciélagos normales
+    for(const b of Game.bats){
+      if(b.alive && b.rx===r.rx && b.ry===r.ry){ b.alive=false; }
+    }
+    // Los murciélagos rojos NO se ven afectados por la antorcha
+  }
+  setStatus(`Sala despejada. Seguridad ${CONFIG.torchSafe} s.`);
   updateHUD();
 }
 
 /* =========================
    AI Murciélagos
 ========================= */
-function updateBats(){
+function stepBatArray(arr){
   if(Game.state!==STATE.PLAYING) return;
   const t = performance.now();
-  for(const b of Game.bats){
+  for(const b of arr){
     if(!b.alive) continue;
     if(!b.nextStep || t>=b.nextStep){
       const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
@@ -659,9 +917,23 @@ function updateBats(){
   }
   // Colisión si pisan al jugador
   if(now()>Game.safeUntil){
-    const hit = Game.bats.find(b=>b.alive && b.x===Game.player.x && b.y===Game.player.y);
+    // Normales
+    const hit = arr === Game.bats
+      ? arr.find(b=>b.alive && b.x===Game.player.x && b.y===Game.player.y)
+      : null;
     if(hit){ hit.alive=false; launchQuiz(7); }
+    // Rojos
+    if(arr === Game.redBats){
+      const rhit = arr.find(b=>b.alive && b.x===Game.player.x && b.y===Game.player.y);
+      if(rhit){ defeatRedBat(rhit); launchQuiz(7); }
+    }
   }
+}
+
+function updateBats(){
+  if(Game.state!==STATE.PLAYING) return;
+  stepBatArray(Game.bats);
+  stepBatArray(Game.redBats);
 }
 
 /* =========================
@@ -683,14 +955,17 @@ function updateHUD(){
     heartsDiv.appendChild(d);
   }
   timerDiv.textContent = '⏳ '+fmtTime(Game.timeLeft);
+
+  // Barra de antorcha: porcentaje + (segundos restantes)
   const t=now();
-  const pct = clamp( (TORCH_CD - (Game.torchReadyAt - t)) / TORCH_CD, 0, 1 );
+  const pct = clamp( (CONFIG.torchCd - (Game.torchReadyAt - t)) / CONFIG.torchCd, 0, 1 );
   torchFill.style.width = (pct*100).toFixed(0)+'%';
-  torchPct.textContent = (pct*100).toFixed(0)+'%';
+  const secsLeft = Math.max(0, Math.ceil(Game.torchReadyAt - t));
+  torchPct.textContent = pct >= 1 ? '100%' : `${secsLeft}s`;
 }
 
 /* =========================
-   Preguntas (STEM)
+   Sistema de preguntas
 ========================= */
 const quizModal = document.getElementById('quizModal');
 const qText = document.getElementById('qText');
@@ -701,12 +976,13 @@ const qCount = document.getElementById('quizCount');
 
 let quizQueue = [];
 let quizIdx = 0;
+let perfectCount = 0;
 
 function pickQuestion(){ return QUESTION_BANK[randInt(0, QUESTION_BANK.length-1)]; }
 
 function launchQuiz(n){
   Game.state = STATE.ASKING;
-  quizQueue = []; quizIdx = 0;
+  quizQueue = []; quizIdx = 0; perfectCount = 0;
   for(let i=0;i<n;i++) quizQueue.push(pickQuestion());
   qProgress.innerHTML=''; for(let i=0;i<n;i++){ const seg=document.createElement('div'); seg.className='seg'; qProgress.appendChild(seg); }
   qCount.textContent = `Pregunta 1 de ${n}`;
@@ -715,14 +991,12 @@ function launchQuiz(n){
 }
 
 function showModal(on){ quizModal.style.display = on?'flex':'none'; }
-
 function showQuestion(){
   const q = quizQueue[quizIdx];
   qText.textContent = q.text;
   qMeta.textContent = `Categoría: ${q.cat}`;
   qButtons.forEach((btn,i)=>{ btn.querySelector('.optTxt').textContent = q.opts[i]; });
 }
-
 qButtons.forEach(btn=> btn.addEventListener('click', ()=> handleAnswer(Number(btn.dataset.idx)) ));
 document.addEventListener('keydown', (e)=>{
   if(Game.state===STATE.ASKING && ['Digit1','Digit2','Digit3','Digit4'].includes(e.code)){
@@ -730,7 +1004,9 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-function startDeathFade(stateType){ Game.state = stateType; Game.fadeAlpha = 0; }
+function startDeathFade(stateType){
+  Game.state = stateType; Game.fadeAlpha = 0; Game.deathHoldUntil = null;
+}
 
 function handleAnswer(idx){
   const q = quizQueue[quizIdx];
@@ -738,11 +1014,11 @@ function handleAnswer(idx){
   const seg = qProgress.children[quizIdx];
   seg.classList.add(ok?'on':'bad');
 
-  if(ok){ AudioSys.beep('ok'); Game.qStats.ok++; }
+  if(ok){ AudioSys.beep('ok'); Game.qStats.ok++; perfectCount++; }
   else {
     AudioSys.beep('bad');
     Game.player.hearts = Math.max(0, Game.player.hearts-1);
-    Game.qStats.bad++;
+    Game.qStats.bad++; perfectCount = -999;
     if(Game.player.hearts===0){ showModal(false); startDeathFade(STATE.DEFEAT_HP); return; }
     updateHUD();
   }
@@ -752,8 +1028,18 @@ function handleAnswer(idx){
   Game.qStats.byCat[q.cat].total++; if(ok) Game.qStats.byCat[q.cat].ok++; else Game.qStats.byCat[q.cat].bad++;
 
   quizIdx++;
-  if(quizIdx>=quizQueue.length){ showModal(false); Game.state=STATE.PLAYING; }
-  else { qCount.textContent = `Pregunta ${quizIdx+1} de ${quizQueue.length}`; showQuestion(); }
+  if(quizIdx>=quizQueue.length){
+    if(PERFECT_BONUS_HEART && perfectCount>=7 && Game.player.hearts<MAX_HEARTS){
+      Game.player.hearts = Math.min(MAX_HEARTS, Game.player.hearts+1);
+      setStatus("¡Perfecto! +1 ❤️");
+      updateHUD();
+    }
+    showModal(false);
+    Game.state=STATE.PLAYING;
+  } else {
+    qCount.textContent = `Pregunta ${quizIdx+1} de ${quizQueue.length}`;
+    showQuestion();
+  }
 }
 
 /* =========================
@@ -767,8 +1053,10 @@ function showVictory(){
   const v = document.getElementById('victStats');
   const total = Game.qStats.total, ok = Game.qStats.ok, bad = Game.qStats.bad;
   const acc = total? Math.round(100*ok/total):0;
-  v.innerHTML = `<p><strong>Tiempo restante:</strong> ${fmtTime(Game.timeLeft)} • <strong>HP:</strong> ${Game.player.hearts}/${MAX_HEARTS}</p>
-                 <p><strong>Preguntas:</strong> ${total} &nbsp;|&nbsp; <strong>Correctas:</strong> ${ok} &nbsp;|&nbsp; <strong>Incorrectas:</strong> ${bad} &nbsp;|&nbsp; <strong>Acierto:</strong> ${acc}%</p>`;
+  v.innerHTML =
+    `<p><strong>Jugador:</strong> ${Game.playerName||'Jugador'}</p>
+     <p><strong>Tiempo restante:</strong> ${fmtTime(Game.timeLeft)} • <strong>HP:</strong> ${Game.player.hearts}/${MAX_HEARTS}</p>
+     <p><strong>Preguntas:</strong> ${total} &nbsp;|&nbsp; <strong>Correctas:</strong> ${ok} &nbsp;|&nbsp; <strong>Incorrectas:</strong> ${bad} &nbsp;|&nbsp; <strong>Acierto:</strong> ${acc}%</p>`;
   const tbody = document.querySelector('#catTable tbody');
   tbody.innerHTML='';
   for(const [cat, s] of Object.entries(Game.qStats.byCat)){
@@ -797,8 +1085,12 @@ function gameLoop(){
     if(Game.timeLeft<=0){ startDeathFade(STATE.DEFEAT_T); }
     else { updateInput(); updateBats(); }
   } else if(Game.state===STATE.DEFEAT_HP || Game.state===STATE.DEFEAT_T){
-    Game.fadeAlpha = Math.min(1, Game.fadeAlpha + dt/1.0);
-    if(Game.fadeAlpha>=1){ resetGame(); return; }
+    if(Game.fadeAlpha < 1){
+      Game.fadeAlpha = Math.min(1, Game.fadeAlpha + dt/1.0);
+    } else {
+      if(Game.deathHoldUntil===null) Game.deathHoldUntil = t + DEATH_HOLD;
+      if(t >= Game.deathHoldUntil){ resetGame(); return; }
+    }
   }
 
   updateHUD();
@@ -807,12 +1099,112 @@ function gameLoop(){
   drawScene();
 }
 
+/* =========================
+   Opciones (UI)
+========================= */
+const optModal = document.getElementById('optModal');
+const btnOptions = document.getElementById('btnOptions');
+const optTime = document.getElementById('optTime');
+const optBats = document.getElementById('optBats');
+const optTorchCd = document.getElementById('optTorchCd');
+const optTorchSafe = document.getElementById('optTorchSafe');
+const optApply = document.getElementById('optApply');
+const optCancel = document.getElementById('optCancel');
+
+btnOptions.addEventListener('click', ()=> {
+  optTime.value = Math.max(1, Math.round(CONFIG.totalTimeSec/60));
+  optBats.value = String(CONFIG.batsPerRoom);
+  optTorchCd.value = CONFIG.torchCd;
+  optTorchSafe.value = CONFIG.torchSafe;
+  optModal.style.display='flex';
+});
+optCancel.addEventListener('click', ()=> optModal.style.display='none');
+
+optApply.addEventListener('click', ()=>{
+  const minutes = clamp(parseInt(optTime.value||'3',10), 1, 60);
+  const bats = clamp(parseInt(optBats.value||'3',10), 1, 10);
+  const cd = clamp(parseInt(optTorchCd.value||'60',10), 1, 9999);
+  const safe = clamp(parseInt(optTorchSafe.value||'7',10), 1, 60);
+
+  CONFIG.totalTimeSec = minutes*60;
+  CONFIG.batsPerRoom = bats;
+  CONFIG.torchCd = cd;
+  CONFIG.torchSafe = safe;
+
+  optModal.style.display='none';
+  resetGame(); // aplica y reinicia
+});
+
+/* =========================
+   Controles táctiles
+========================= */
+const padUp = document.getElementById('padUp');
+const padDown = document.getElementById('padDown');
+const padLeft = document.getElementById('padLeft');
+const padRight = document.getElementById('padRight');
+const btnTorch = document.getElementById('btnTorch');
+
+let touchMoveInterval = null;
+function startTouchDir(dx,dy){
+  if(Game.state!==STATE.PLAYING) return;
+  if(!AudioSys.ctx) AudioSys.ensure();
+  tryMove(dx,dy); // paso inicial inmediato
+  stopTouchDir();
+  touchMoveInterval = setInterval(()=>{ if(Game.state===STATE.PLAYING) tryMove(dx,dy); }, Math.max(90, MOVE_DELAY*1000));
+}
+function stopTouchDir(){ if(touchMoveInterval){ clearInterval(touchMoveInterval); touchMoveInterval=null; } }
+
+function bindPad(btn, dx, dy){
+  btn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); startTouchDir(dx,dy); });
+  btn.addEventListener('pointerup', (e)=>{ e.preventDefault(); stopTouchDir(); });
+  btn.addEventListener('pointercancel', stopTouchDir);
+  btn.addEventListener('pointerleave', stopTouchDir);
+}
+bindPad(padUp, 0, -1);
+bindPad(padDown, 0, 1);
+bindPad(padLeft, -1, 0);
+bindPad(padRight, 1, 0);
+
+btnTorch.addEventListener('pointerdown', (e)=>{ e.preventDefault(); if(!AudioSys.ctx) AudioSys.ensure(); useTorch(); });
+
+/* =========================
+   Pantalla inicial (lógica)
+========================= */
+const startModal = document.getElementById('startModal');
+const startName = document.getElementById('playerName');
+const btnStart = document.getElementById('btnStart');
+
+function beginGame(){
+  const name = (startName.value || '').trim();
+  if(!name){
+    setStatus('Escribe tu nombre para comenzar.');
+    startName.focus();
+    return;
+  }
+  Game.playerName = name;
+  startModal.style.display = 'none';
+  Game.state = STATE.PLAYING;
+  canvasEl.focus();
+}
+btnStart.addEventListener('click', beginGame);
+startName.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); beginGame(); }});
+
+/* =========================
+   Init
+========================= */
+const canvasWrap = document.getElementById('canvasWrap');
+const canvasEl = document.getElementById('game');
 resetGame();
 resizeCanvas();
 gameLoop();
 
-window.addEventListener('load', ()=>document.getElementById('game').focus());
-document.getElementById('canvasWrap').addEventListener('click', ()=>document.getElementById('game').focus());
+// Forzamos pantalla inicial y pausamos el juego hasta que inicie
+Game.state = STATE.INTRO;
+startModal.style.display = 'flex';
+setTimeout(()=> startName.focus(), 0);
+
+window.addEventListener('load', ()=>canvasEl.focus());
+document.getElementById('canvasWrap').addEventListener('click', ()=>canvasEl.focus());
 </script>
 </body>
 </html>
